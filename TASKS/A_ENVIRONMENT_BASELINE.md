@@ -78,7 +78,9 @@
 
 ### A2：目录与文档落位
 
-**状态**：TODO
+**状态**：DONE
+
+**完成记录**：已按项目规划补齐 `backend`、`frontend`、`lean`、`infra`、`docs`、`TASKS` 的目录落点和说明入口；根目录 `README_START_HERE.md` 已补充仓库入口与目录地图；新增 `docs/architecture/A_DIRECTORY_BASELINE.md` 记录 A2 目录基线。未创建业务接口、页面、数据库表、LEAN Parser 或统一命令，A3 范围保持独立。
 
 #### 工作内容
 

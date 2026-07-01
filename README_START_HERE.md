@@ -1,6 +1,27 @@
-# QuantTrade Codex Loop Engineering 使用入口
+# QuantTrade 使用入口
 
-## 第一次使用
+## 当前仓库入口
+
+本仓库按 `PROJECT_PLAN.md` 和 `TASKS/INDEX.md` 推进，当前只允许在任务文件指定的分支内按编号小步完成任务。
+
+优先阅读：
+
+1. `AGENTS.md`：Codex 工作规则和项目红线；
+2. `PROJECT_PLAN.md`：总体范围、技术栈、目录和阶段定义；
+3. `TASKS/INDEX.md`：分支任务包顺序和门禁；
+4. `TASKS/A_ENVIRONMENT_BASELINE.md`：当前 A 阶段任务。
+
+## 目录地图
+
+- `backend/`：后端 Python 包、应用分层目录、迁移和测试；
+- `frontend/`：前端源码和测试落点，实际构建脚本在 A3 建立；
+- `lean/`：LEAN 配置、模板、解析器、兼容清单和 Golden Fixture；
+- `infra/`：Compose 辅助文件、Nginx 和监控配置落点；
+- `docs/`：ADR、架构说明、数据语义、决策、验收和运维文档；
+- `TASKS/`：阶段任务文件和任务索引；
+- `templates/`：分支任务和 PR 描述模板。
+
+## 第一次使用流程
 
 1. 将本任务包复制到 QuantTrade 仓库根目录。
 2. 让 Codex 读取：
