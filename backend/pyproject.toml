@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quanttrade-backend"
+version = "0.1.0"
+description = "QuantTrade backend baseline package."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pyarrow>=16.0.0",
+  "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
