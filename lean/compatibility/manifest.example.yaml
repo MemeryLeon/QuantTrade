@@ -1,0 +1,6 @@
+compatibility:
+  - lean_image_digest: "sha256:REPLACE_ME"
+    parser_version: "0.1.0"
+    parser_artifact_digest: "sha256:REPLACE_ME"
+    raw_output_schema_version: "1"
+    fixture_version: "1"

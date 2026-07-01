@@ -1,0 +1,45 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+playwright-report/
+test-results/
+
+# Runtime data and large local artifacts
+data/
+artifacts/
+logs/
+*.log
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.parquet
+
+# IDE and OS noise
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

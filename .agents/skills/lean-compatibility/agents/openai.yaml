@@ -1,0 +1,7 @@
+interface:
+  display_name: "LEAN Compatibility"
+  short_description: "验证 LEAN 回测可复现性"
+  default_prompt: "Use $lean-compatibility for the current QuantTrade task."
+
+policy:
+  allow_implicit_invocation: false

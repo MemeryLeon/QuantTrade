@@ -1,0 +1,12 @@
+{
+  "name": "QuantTrade Codex Loop Engineering",
+  "stages": 9,
+  "branch_bundles": 19,
+  "tasks": 44,
+  "documents": [
+    "PROJECT_PLAN.md",
+    "AGENTS.md",
+    "README_START_HERE.md",
+    "TASKS/INDEX.md"
+  ]
+}

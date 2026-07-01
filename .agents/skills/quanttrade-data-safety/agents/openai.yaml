@@ -1,0 +1,7 @@
+interface:
+  display_name: "QuantTrade Data Safety"
+  short_description: "审查行情、快照和未来数据"
+  default_prompt: "Use $quanttrade-data-safety for the current QuantTrade task."
+
+policy:
+  allow_implicit_invocation: true

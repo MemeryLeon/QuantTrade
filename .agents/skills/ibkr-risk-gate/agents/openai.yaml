@@ -1,0 +1,7 @@
+interface:
+  display_name: "IBKR Risk Gate"
+  short_description: "审查 Paper/Live 风控链路"
+  default_prompt: "Use $ibkr-risk-gate for the current QuantTrade task."
+
+policy:
+  allow_implicit_invocation: false

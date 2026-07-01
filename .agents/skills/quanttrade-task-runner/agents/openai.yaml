@@ -1,0 +1,7 @@
+interface:
+  display_name: "QuantTrade Task Runner"
+  short_description: "执行当前 READY 分支任务包"
+  default_prompt: "Use $quanttrade-task-runner for the current QuantTrade task."
+
+policy:
+  allow_implicit_invocation: false

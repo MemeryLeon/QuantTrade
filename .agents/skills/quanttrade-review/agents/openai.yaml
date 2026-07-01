@@ -1,0 +1,7 @@
+interface:
+  display_name: "QuantTrade Review"
+  short_description: "按 QuantTrade 红线审查分支"
+  default_prompt: "Use $quanttrade-review for the current QuantTrade task."
+
+policy:
+  allow_implicit_invocation: true
