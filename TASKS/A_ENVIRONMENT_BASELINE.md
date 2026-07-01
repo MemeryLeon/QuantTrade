@@ -96,7 +96,9 @@
 
 ### A3：统一命令与基线冒烟
 
-**状态**：TODO
+**状态**：DONE
+
+**完成记录**：已建立 `Makefile`、Windows `make.cmd` 和 `scripts/dev.py`，提供 `doctor`、`bootstrap`、`dev`、`check`、`test`、`test-integration`、`e2e`、`down` 统一命令；补齐最小 FastAPI 健康接口、后端格式/类型/单元测试、前端 React TypeScript Vite 构建冒烟，以及 PostgreSQL、Redis、MinIO 健康冒烟；生成 `docs/acceptance/A_BASELINE.md`。
 
 #### 工作内容
 
