@@ -56,9 +56,9 @@
 
 ### A1：补齐工具链与基础服务
 
-**状态**：DOING
+**状态**：DONE
 
-**当前阻塞**：已补齐 Compose 配置、`.env.example`、后端 `pyarrow`/`tzdata` 依赖和 Parquet 往返测试；`docker-compose config` 与后端测试已通过。基础服务实际启动和健康检查阻塞于本机 Docker Desktop/WSL 状态：当前 Docker context 为 `desktop-linux`，`com.docker.service` 为 Stopped，`docker info`/`docker version` 对 `dockerDesktopLinuxEngine` 返回 500，`wsl --status` 提示需要安装 WSL，`Start-Service com.docker.service` 被系统拒绝。
+**完成记录**：已补齐 Compose 配置、`.env.example`、后端 `pyarrow`/`tzdata` 依赖和 Parquet 往返测试。WSL 启用后，`docker compose config` 通过，PostgreSQL、Redis、MinIO 基础服务均启动并通过健康检查；PyArrow 可导入，Parquet 往返测试通过。`make doctor` 和 `make bootstrap` 的统一命令入口按 A3 范围落位。
 
 #### 工作内容
 
