@@ -58,7 +58,7 @@
 
 **状态**：DOING
 
-**当前阻塞**：已补齐 Compose 配置、`.env.example`、后端 `pyarrow`/`tzdata` 依赖和 Parquet 往返测试；`docker-compose config` 与后端测试已通过。基础服务实际启动和健康检查阻塞于本机 Docker Desktop Service 无法启动，`docker info` 返回 daemon 500，`Start-Service com.docker.service` 被系统拒绝。
+**当前阻塞**：已补齐 Compose 配置、`.env.example`、后端 `pyarrow`/`tzdata` 依赖和 Parquet 往返测试；`docker-compose config` 与后端测试已通过。基础服务实际启动和健康检查阻塞于本机 Docker Desktop/WSL 状态：当前 Docker context 为 `desktop-linux`，`com.docker.service` 为 Stopped，`docker info`/`docker version` 对 `dockerDesktopLinuxEngine` 返回 500，`wsl --status` 提示需要安装 WSL，`Start-Service com.docker.service` 被系统拒绝。
 
 #### 工作内容
 
