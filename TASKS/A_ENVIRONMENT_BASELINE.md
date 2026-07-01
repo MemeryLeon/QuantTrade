@@ -40,6 +40,8 @@
 
 ### A0：现状审计与版本检查
 
+**状态**：DONE
+
 #### 工作内容
 
 - 盘点 Git、Docker、Docker Compose、Python、Node、当前包管理器、PostgreSQL、Redis、MinIO、LEAN 与 IBKR 状态。
@@ -53,6 +55,8 @@
 - 相关测试通过后创建一次 commit。
 
 ### A1：补齐工具链与基础服务
+
+**状态**：TODO
 
 #### 工作内容
 
@@ -72,6 +76,8 @@
 
 ### A2：目录与文档落位
 
+**状态**：TODO
+
 #### 工作内容
 
 - 对齐 backend、frontend、lean、infra、docs、TASKS 等目录。
@@ -85,6 +91,8 @@
 - 相关测试通过后创建一次 commit。
 
 ### A3：统一命令与基线冒烟
+
+**状态**：TODO
 
 #### 工作内容
 
