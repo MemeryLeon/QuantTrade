@@ -505,6 +505,19 @@ textarea {
   margin: 0;
 }
 
+.chart-empty-state {
+  align-content: center;
+  gap: 8px;
+  min-height: 460px;
+  background: #0b1117;
+  text-align: center;
+}
+
+.chart-empty-state span {
+  max-width: 560px;
+  margin: 0;
+}
+
 .local-only,
 .empty-inline {
   color: #647184;

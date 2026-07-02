@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from app.api.v1.dependencies import get_market_data_service
 from app.application.market_data import MarketDataApplicationService
 from app.core.config import get_settings
-from app.domains.market import BarsRequest, DataSourceStatus, QualityFlag
+from app.domains.market import BarsRequest, DataSourceStatus, MarketDataUnavailable, QualityFlag
 from app.infrastructure.akshare_market_data import AKSHARE_PROVIDER, AkshareDataProvider
 from app.infrastructure.cache import RedisCache
 from app.main import app
@@ -29,9 +29,12 @@ class FakeFrame:
 class FakeAkshare:
     def __init__(self) -> None:
         self.fail_hist = False
+        self.fail_spot = False
         self.hist_calls = 0
 
     def stock_zh_a_spot_em(self) -> FakeFrame:
+        if self.fail_spot:
+            raise RuntimeError("provider timeout")
         return FakeFrame(
             [
                 {"代码": "000001", "名称": "平安银行", "最新价": "10.10"},
@@ -224,14 +227,34 @@ def test_akshare_provider_reports_unavailable_after_failure_threshold() -> None:
     fake_akshare.fail_hist = True
     provider = _provider(fake_akshare, FakeRedis())
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(MarketDataUnavailable):
         asyncio.run(provider.get_bars(_request()))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(MarketDataUnavailable):
         asyncio.run(provider.get_bars(_request()))
 
     health = asyncio.run(provider.get_health(AKSHARE_PROVIDER))
     assert health.status is DataSourceStatus.UNAVAILABLE
     assert health.consecutive_failures == 2
+
+
+def test_market_quote_api_returns_503_when_provider_is_unavailable() -> None:
+    fake_akshare = FakeAkshare()
+    fake_akshare.fail_spot = True
+    provider = _provider(fake_akshare, FakeRedis())
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get("/market/quote", params={"instrument_id": "CN_A:000001"})
+        health = asyncio.run(provider.get_health(AKSHARE_PROVIDER))
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    payload = response.json()
+    assert payload["code"] == "DATA_SOURCE_UNAVAILABLE"
+    assert payload["details"]["provider"] == "akshare"
+    assert health.status is DataSourceStatus.DEGRADED
 
 
 def test_market_health_api_uses_application_service() -> None:

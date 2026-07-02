@@ -24,7 +24,7 @@ from app.contracts.market import (
 )
 from app.core.errors import ApiError
 from app.domains.indicators import IndicatorRequest
-from app.domains.market import BarsRequest
+from app.domains.market import BarsRequest, MarketDataUnavailable
 
 
 router = APIRouter(prefix="/market", tags=["market"])
@@ -35,7 +35,10 @@ async def search_instruments(
     query: str = Query(min_length=1),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> InstrumentSearchResponse:
-    instruments = await service.search_instruments(query)
+    try:
+        instruments = await service.search_instruments(query)
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc) from exc
     return InstrumentSearchResponse(
         instruments=tuple(
             InstrumentResponse(
@@ -64,6 +67,8 @@ async def get_quote(
             message=str(exc),
             details={"instrument_id": instrument_id},
         ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
     return QuoteResponse(
         instrument_id=quote.instrument_id,
         provider="akshare",
@@ -104,6 +109,8 @@ async def get_bars(
             message=str(exc),
             details={"instrument_id": instrument_id},
         ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
     return BarsResponse(
         instrument_id=result.instrument_id,
         provider="akshare",
@@ -177,6 +184,8 @@ async def get_indicators(
             message=str(exc),
             details={"instrument_id": instrument_id},
         ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
     return IndicatorsResponse(
         instrument_id=result.instrument_id,
         provider="akshare",
@@ -234,7 +243,10 @@ async def get_calendar(
     end: date = Query(),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> TradingCalendarResponse:
-    calendar = await service.get_calendar(market, start, end)
+    try:
+        calendar = await service.get_calendar(market, start, end)
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc) from exc
     return TradingCalendarResponse(
         market=calendar.market,
         version=calendar.version,
@@ -258,4 +270,20 @@ async def get_data_source_health(
         last_error_code=health.last_error_code,
         stale_cache_available=health.stale_cache_available,
         stale_age_seconds=health.stale_age_seconds,
+    )
+
+
+def _data_source_unavailable(
+    exc: MarketDataUnavailable,
+    *,
+    instrument_id: str | None = None,
+) -> ApiError:
+    details = {"provider": exc.provider, "error_code": exc.error_code}
+    if instrument_id is not None:
+        details["instrument_id"] = instrument_id
+    return ApiError(
+        status_code=503,
+        code="DATA_SOURCE_UNAVAILABLE",
+        message="行情数据源暂不可用，请检查网络代理或稍后重试",
+        details=details,
     )

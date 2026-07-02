@@ -20,6 +20,7 @@ from app.domains.market import (
     DataSourceHealth,
     DataSourceStatus,
     Instrument,
+    MarketDataUnavailable,
     QualityFlag,
     Quote,
     TradingCalendar,
@@ -91,7 +92,11 @@ class AkshareDataProvider:
         )
 
     async def search_instruments(self, query: str) -> tuple[Instrument, ...]:
-        records = self._records(self._akshare_factory().stock_zh_a_spot_em())
+        try:
+            records = self._records(self._akshare_factory().stock_zh_a_spot_em())
+        except Exception as exc:
+            self._record_failure(type(exc).__name__, None)
+            raise MarketDataUnavailable(AKSHARE_PROVIDER, type(exc).__name__) from exc
         normalized_query = query.strip().lower()
         instruments: list[Instrument] = []
         for record in records:
@@ -127,7 +132,7 @@ class AkshareDataProvider:
             self._record_failure(type(exc).__name__, stale)
             if stale is not None:
                 return stale
-            raise
+            raise MarketDataUnavailable(AKSHARE_PROVIDER, type(exc).__name__) from exc
 
         self._cache.set_bytes(self._bars_cache_key, identity, _encode_bars(result))
         self._record_success()
@@ -135,7 +140,11 @@ class AkshareDataProvider:
 
     async def get_quote(self, instrument_id: str) -> Quote:
         symbol = _instrument_symbol(instrument_id)
-        records = self._records(self._akshare_factory().stock_zh_a_spot_em())
+        try:
+            records = self._records(self._akshare_factory().stock_zh_a_spot_em())
+        except Exception as exc:
+            self._record_failure(type(exc).__name__, None)
+            raise MarketDataUnavailable(AKSHARE_PROVIDER, type(exc).__name__) from exc
         for record in records:
             if _required_text(record, "代码") != symbol:
                 continue
@@ -156,7 +165,11 @@ class AkshareDataProvider:
     async def get_calendar(self, market: str, start: date, end: date) -> TradingCalendar:
         if market != CHINA_A_MARKET:
             raise ValueError("unsupported market")
-        records = self._records(self._akshare_factory().tool_trade_date_hist_sina())
+        try:
+            records = self._records(self._akshare_factory().tool_trade_date_hist_sina())
+        except Exception as exc:
+            self._record_failure(type(exc).__name__, None)
+            raise MarketDataUnavailable(AKSHARE_PROVIDER, type(exc).__name__) from exc
         days = tuple(
             day
             for day in (_record_date(record) for record in records)

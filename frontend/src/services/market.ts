@@ -16,6 +16,12 @@ type ApiErrorBody = {
 };
 
 function apiErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.message.includes("Failed to fetch")) {
+      return "无法连接行情服务，请确认本地后端已启动";
+    }
+    return error.message;
+  }
   const body = error as ApiErrorBody | undefined;
   if (body?.code && body?.message) {
     return `${body.code}: ${body.message}`;
@@ -23,13 +29,26 @@ function apiErrorMessage(error: unknown): string {
   return "请求失败";
 }
 
-export async function searchInstruments(query: string): Promise<Instrument[]> {
-  const { data, error } = await apiClient.GET("/market/instruments/search", {
-    params: { query: { query } },
-  });
-  if (error || !data) {
+async function unwrapApiResponse<T>(
+  request: Promise<{ data?: T; error?: unknown }>,
+): Promise<T> {
+  try {
+    const { data, error } = await request;
+    if (error || !data) {
+      throw new Error(apiErrorMessage(error));
+    }
+    return data;
+  } catch (error) {
     throw new Error(apiErrorMessage(error));
   }
+}
+
+export async function searchInstruments(query: string): Promise<Instrument[]> {
+  const data = await unwrapApiResponse(
+    apiClient.GET("/market/instruments/search", {
+      params: { query: { query } },
+    }),
+  );
   return data.instruments;
 }
 
@@ -40,31 +59,27 @@ export async function getBars(params: {
   resolution: MarketResolution;
   adjustment: Adjustment;
 }): Promise<Bars> {
-  const { data, error } = await apiClient.GET("/market/bars", {
-    params: {
-      query: {
-        instrument_id: params.instrumentId,
-        start: params.start,
-        end: params.end,
-        resolution: params.resolution,
-        adjustment: params.adjustment,
+  return unwrapApiResponse(
+    apiClient.GET("/market/bars", {
+      params: {
+        query: {
+          instrument_id: params.instrumentId,
+          start: params.start,
+          end: params.end,
+          resolution: params.resolution,
+          adjustment: params.adjustment,
+        },
       },
-    },
-  });
-  if (error || !data) {
-    throw new Error(apiErrorMessage(error));
-  }
-  return data;
+    }),
+  );
 }
 
 export async function getQuote(instrumentId: string): Promise<Quote> {
-  const { data, error } = await apiClient.GET("/market/quote", {
-    params: { query: { instrument_id: instrumentId } },
-  });
-  if (error || !data) {
-    throw new Error(apiErrorMessage(error));
-  }
-  return data;
+  return unwrapApiResponse(
+    apiClient.GET("/market/quote", {
+      params: { query: { instrument_id: instrumentId } },
+    }),
+  );
 }
 
 export async function getIndicators(params: {
@@ -75,38 +90,34 @@ export async function getIndicators(params: {
   adjustment: Adjustment;
   parameters: IndicatorParameters;
 }): Promise<Indicators> {
-  const { data, error } = await apiClient.GET("/market/indicators", {
-    params: {
-      query: {
-        instrument_id: params.instrumentId,
-        start: params.start,
-        end: params.end,
-        resolution: params.resolution,
-        adjustment: params.adjustment,
-        sma_period: params.parameters.sma_period,
-        ema_period: params.parameters.ema_period,
-        macd_fast_period: params.parameters.macd_fast_period,
-        macd_slow_period: params.parameters.macd_slow_period,
-        macd_signal_period: params.parameters.macd_signal_period,
-        rsi_period: params.parameters.rsi_period,
-        bollinger_period: params.parameters.bollinger_period,
-        bollinger_multiplier: params.parameters.bollinger_multiplier,
-        adx_period: params.parameters.adx_period,
+  return unwrapApiResponse(
+    apiClient.GET("/market/indicators", {
+      params: {
+        query: {
+          instrument_id: params.instrumentId,
+          start: params.start,
+          end: params.end,
+          resolution: params.resolution,
+          adjustment: params.adjustment,
+          sma_period: params.parameters.sma_period,
+          ema_period: params.parameters.ema_period,
+          macd_fast_period: params.parameters.macd_fast_period,
+          macd_slow_period: params.parameters.macd_slow_period,
+          macd_signal_period: params.parameters.macd_signal_period,
+          rsi_period: params.parameters.rsi_period,
+          bollinger_period: params.parameters.bollinger_period,
+          bollinger_multiplier: params.parameters.bollinger_multiplier,
+          adx_period: params.parameters.adx_period,
+        },
       },
-    },
-  });
-  if (error || !data) {
-    throw new Error(apiErrorMessage(error));
-  }
-  return data;
+    }),
+  );
 }
 
 export async function getDataSourceHealth(): Promise<DataSourceHealth> {
-  const { data, error } = await apiClient.GET("/market/data-sources/{provider}/health", {
-    params: { path: { provider: "akshare" } },
-  });
-  if (error || !data) {
-    throw new Error(apiErrorMessage(error));
-  }
-  return data;
+  return unwrapApiResponse(
+    apiClient.GET("/market/data-sources/{provider}/health", {
+      params: { path: { provider: "akshare" } },
+    }),
+  );
 }

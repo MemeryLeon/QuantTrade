@@ -19,6 +19,13 @@ class DataSourceStatus(StrEnum):
     RECOVERING = "recovering"
 
 
+class MarketDataUnavailable(RuntimeError):
+    def __init__(self, provider: str, error_code: str) -> None:
+        super().__init__(f"{provider} data source unavailable: {error_code}")
+        self.provider = provider
+        self.error_code = error_code
+
+
 class QualityFlag(StrEnum):
     MISSING_BARS = "MISSING_BARS"
     DUPLICATE_BARS = "DUPLICATE_BARS"

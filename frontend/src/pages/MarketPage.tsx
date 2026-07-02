@@ -360,11 +360,19 @@ export function MarketPage() {
               resetSignal={chartResetSignal}
               isFullscreen={chartFullscreen}
             />
-          ) : null}
+          ) : (
+            <div className="empty-state chart-empty-state" role="status">
+              <strong>{barsQuery.error ? "行情数据暂不可用" : "正在加载行情数据"}</strong>
+              <span>
+                {barsQuery.error
+                  ? barsQuery.error.message
+                  : "正在连接本地后端和行情数据源"}
+              </span>
+            </div>
+          )}
           <p className="chart-footnote">
             {barsQuery.data ? `${barsQuery.data.bars.length} 根` : "加载中"} · 支持十字光标、缩放、拖动
           </p>
-          {barsQuery.error ? <p className="error-text">{barsQuery.error.message}</p> : null}
         </section>
 
         <aside className="market-side" aria-label="行情基础信息">
