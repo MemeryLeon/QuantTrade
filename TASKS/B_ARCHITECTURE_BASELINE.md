@@ -40,6 +40,8 @@
 
 ### B0：后端模块化骨架
 
+状态：DONE
+
 #### 工作内容
 
 - 建立 api、application、domains、infrastructure、contracts、workers、core。
@@ -53,6 +55,8 @@
 - 相关测试通过后创建一次 commit。
 
 ### B1：配置、错误、日志与核心 Port
+
+状态：DESIGN_REVIEW
 
 #### 工作内容
 
