@@ -40,6 +40,8 @@
 
 ### A0：现状审计与版本检查
 
+**状态**：DONE
+
 #### 工作内容
 
 - 盘点 Git、Docker、Docker Compose、Python、Node、当前包管理器、PostgreSQL、Redis、MinIO、LEAN 与 IBKR 状态。
@@ -53,6 +55,10 @@
 - 相关测试通过后创建一次 commit。
 
 ### A1：补齐工具链与基础服务
+
+**状态**：DONE
+
+**完成记录**：已补齐 Compose 配置、`.env.example`、后端 `pyarrow`/`tzdata` 依赖和 Parquet 往返测试。WSL 启用后，`docker compose config` 通过，PostgreSQL、Redis、MinIO 基础服务均启动并通过健康检查；PyArrow 可导入，Parquet 往返测试通过。`make doctor` 和 `make bootstrap` 的统一命令入口按 A3 范围落位。
 
 #### 工作内容
 
@@ -72,6 +78,10 @@
 
 ### A2：目录与文档落位
 
+**状态**：DONE
+
+**完成记录**：已按项目规划补齐 `backend`、`frontend`、`lean`、`infra`、`docs`、`TASKS` 的目录落点和说明入口；根目录 `README_START_HERE.md` 已补充仓库入口与目录地图；新增 `docs/architecture/A_DIRECTORY_BASELINE.md` 记录 A2 目录基线。未创建业务接口、页面、数据库表、LEAN Parser 或统一命令，A3 范围保持独立。
+
 #### 工作内容
 
 - 对齐 backend、frontend、lean、infra、docs、TASKS 等目录。
@@ -85,6 +95,10 @@
 - 相关测试通过后创建一次 commit。
 
 ### A3：统一命令与基线冒烟
+
+**状态**：DONE
+
+**完成记录**：已建立 `Makefile`、Windows `make.cmd` 和 `scripts/dev.py`，提供 `doctor`、`bootstrap`、`dev`、`check`、`test`、`test-integration`、`e2e`、`down` 统一命令；补齐最小 FastAPI 健康接口、后端格式/类型/单元测试、前端 React TypeScript Vite 构建冒烟，以及 PostgreSQL、Redis、MinIO 健康冒烟；生成 `docs/acceptance/A_BASELINE.md`。
 
 #### 工作内容
 

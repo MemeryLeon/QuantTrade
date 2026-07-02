@@ -25,13 +25,14 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+*.tsbuildinfo
 playwright-report/
 test-results/
 
 # Runtime data and large local artifacts
-data/
-artifacts/
-logs/
+/data/
+/artifacts/
+/logs/
 *.log
 *.sqlite
 *.sqlite-shm

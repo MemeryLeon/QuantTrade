@@ -1,15 +1,16 @@
 # Project-scoped Codex configuration for trusted QuantTrade workspaces.
 
 [mcp_servers.playwright]
-command = "npx"
+command = "npx.cmd"
 args = ["-y", "@playwright/mcp@latest"]
 cwd = ".."
 startup_timeout_sec = 60
 tool_timeout_sec = 120
 
 [mcp_servers.context7]
-command = "npx"
+command = "npx.cmd"
 args = ["-y", "@upstash/context7-mcp@latest"]
 cwd = ".."
 startup_timeout_sec = 60
 tool_timeout_sec = 120
+env_vars = ["CONTEXT7_API_KEY"]
