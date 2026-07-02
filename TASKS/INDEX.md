@@ -18,8 +18,8 @@
 | A-BR1 | A：环境与仓库基线 | `chore/A-environment-baseline` | A0, A1, A2, A3 | - | 普通；更换语言、框架、数据库、包管理器或核心依赖时必须先人工批准 | DONE |
 | B-BR1 | B：架构与契约基线 | `feature/B-core-foundation` | B0, B1, B2, B3 | A-BR1 | 先设计评审，后实现；完成 B0、B1 草案后必须暂停并请求人工确认 | DONE |
 | B-BR2 | B：架构与契约基线 | `feature/B-frontend-ci` | B4, B5 | B-BR1 | 普通；OpenAPI 破坏性变化必须人工批准 | DONE |
-| C-BR1 | C：行情与基础看盘 | `feature/C-market-backend` | C0, C1, C2 | B-BR2 | 高风险：数据、时区、复权、快照和指标定义必须人工确认 | IN_PROGRESS |
-| C-BR2 | C：行情与基础看盘 | `feature/C-market-ui` | C3, C4 | C-BR1 | 普通；页面、数据警告和自选体验由用户验收 | BACKLOG |
+| C-BR1 | C：行情与基础看盘 | `feature/C-market-backend` | C0, C1, C2 | B-BR2 | 高风险：数据、时区、复权、快照和指标定义必须人工确认 | DONE |
+| C-BR2 | C：行情与基础看盘 | `feature/C-market-ui` | C3, C4 | C-BR1 | 普通；页面、数据警告和自选体验由用户验收 | READY |
 | D-BR1 | D：LEAN 回测 MVP | `feature/D-lean-runtime` | D0, D1, D2 | C-BR2 | 高风险：LEAN Digest、资源限制、回测 Contract、费用和滑点需人工批准 | BACKLOG |
 | D-BR2 | D：LEAN 回测 MVP | `feature/D-result-pipeline` | D3, D4 | D-BR1 | 高风险：Parser、Schema、Fixture 和金融结果语义必须人工确认 | BACKLOG |
 | D-BR3 | D：LEAN 回测 MVP | `feature/D-backtest-ui` | D5, D6 | D-BR2 | 普通；最终复权、费用、滑点和交易结果由用户验收 | BACKLOG |
