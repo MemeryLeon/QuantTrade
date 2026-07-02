@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "feature/**"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: python -m pip install -e ".[dev]" -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci --registry=https://registry.npmmirror.com --cache .npm-cache
+
+      - name: Start development services
+        run: python scripts/dev.py dev
+
+      - name: Run checks
+        run: python scripts/dev.py check
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: python scripts/dev.py e2e
+
+      - name: Stop development services
+        if: always()
+        run: python scripts/dev.py down

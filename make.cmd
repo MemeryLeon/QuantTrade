@@ -5,4 +5,6 @@ if exist "%~dp0.venv\Scripts\python.exe" (
 ) else (
   python "%~dp0scripts\dev.py" %*
 )
+set exit_code=%errorlevel%
 endlocal
+exit /b %exit_code%

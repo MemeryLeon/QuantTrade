@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -75,18 +76,25 @@ def check_docker_services() -> None:
         "quanttrade-minio": "healthy",
     }
     docker = find_executable("docker")
-    for container, health in expected.items():
-        actual = capture(
-            [
-                docker,
-                "inspect",
-                "--format",
-                "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}",
-                container,
-            ],
-        )
-        if actual != health:
-            raise CommandError(f"{container} expected {health}, got {actual}")
+    deadline = time.monotonic() + 60
+    pending = dict(expected)
+    while pending:
+        for container, health in list(pending.items()):
+            actual = capture(
+                [
+                    docker,
+                    "inspect",
+                    "--format",
+                    "{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}",
+                    container,
+                ],
+            )
+            if actual == health:
+                pending.pop(container)
+            elif time.monotonic() >= deadline:
+                raise CommandError(f"{container} expected {health}, got {actual}")
+        if pending:
+            time.sleep(2)
 
 
 def doctor() -> None:
@@ -105,14 +113,35 @@ def doctor() -> None:
 
 
 def test() -> None:
-    run(python_base() + ["-m", "ruff", "check", "app", "tests"], BACKEND)
-    run(python_base() + ["-m", "mypy"], BACKEND)
+    run(python_base() + ["-m", "ruff", "check", "app", "tests", "--no-cache"], BACKEND)
+    run(python_base() + ["-m", "mypy", "--cache-dir", str(ROOT / ".tmp" / "mypy_cache")], BACKEND)
     run(python_base() + ["-m", "pytest"], BACKEND)
     migration_smoke()
 
 
+def frontend_openapi() -> None:
+    run(npm_base() + ["run", "generate:openapi"], FRONTEND)
+    git = find_executable("git")
+    run(
+        [
+            git,
+            "diff",
+            "--exit-code",
+            "--",
+            "frontend/src/api/generated/openapi.json",
+            "frontend/src/api/generated/schema.d.ts",
+        ],
+        ROOT,
+    )
+
+
 def frontend_build() -> None:
+    frontend_openapi()
     run(npm_base() + ["run", "build"], FRONTEND)
+
+
+def frontend_test() -> None:
+    run(npm_base() + ["test"], FRONTEND)
 
 
 def test_integration() -> None:
@@ -185,12 +214,12 @@ def check() -> None:
     doctor()
     test()
     frontend_build()
+    frontend_test()
     test_integration()
 
 
 def e2e() -> None:
-    frontend_build()
-    print("PASS e2e baseline smoke: frontend production build completed")
+    run(npm_base() + ["run", "e2e"], FRONTEND)
 
 
 def down() -> None:

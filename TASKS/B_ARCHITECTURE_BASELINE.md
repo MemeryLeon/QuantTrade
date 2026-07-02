@@ -145,6 +145,8 @@
 
 ### B4：前端骨架与 OpenAPI 类型
 
+状态：DONE
+
 #### 工作内容
 
 - 建立 React、TypeScript、TanStack Query、Zustand 标准目录。
@@ -158,6 +160,8 @@
 - 相关测试通过后创建一次 commit。
 
 ### B5：Mock 页面、测试与 CI
+
+状态：DONE
 
 #### 工作内容
 

@@ -1,21 +1,19 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+
+import { App } from "./App";
 import "./styles.css";
 
-function App() {
-  return (
-    <main className="app-shell">
-      <section className="status-panel" aria-labelledby="status-title">
-        <p className="eyebrow">QuantTrade</p>
-        <h1 id="status-title">开发基线已就绪</h1>
-        <p>前端构建冒烟用于确认 React、TypeScript 和 Vite 工具链可用。</p>
-      </section>
-    </main>
-  );
-}
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
   </React.StrictMode>,
 );
