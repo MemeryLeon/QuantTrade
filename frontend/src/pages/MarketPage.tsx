@@ -12,6 +12,7 @@ import {
   type Indicators,
   type Instrument,
 } from "../services/market";
+import { useWatchlistStore } from "../stores/watchlistStore";
 
 type Bar = Bars["bars"][number];
 type IndicatorPoint = Indicators["points"][number];
@@ -37,6 +38,14 @@ export function MarketPage() {
   const [startDate, setStartDate] = useState(() => daysBeforeInputDate(180));
   const [endDate, setEndDate] = useState(() => inputDate(new Date()));
   const [adjustment, setAdjustment] = useState<Adjustment>("qfq");
+  const [exportText, setExportText] = useState("");
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const watchlistItems = useWatchlistStore((state) => state.items);
+  const addInstrument = useWatchlistStore((state) => state.addInstrument);
+  const removeInstrument = useWatchlistStore((state) => state.removeInstrument);
+  const exportWatchlist = useWatchlistStore((state) => state.exportJson);
+  const importWatchlist = useWatchlistStore((state) => state.importJson);
 
   const healthQuery = useQuery({
     queryKey: ["market-health", "akshare"],
@@ -79,10 +88,33 @@ export function MarketPage() {
   const indicatorPoints = indicatorsQuery.data?.points ?? [];
   const latestIndicator = indicatorPoints[indicatorPoints.length - 1];
   const warningText = warningMessage(healthQuery.data, barsQuery.data, indicatorsQuery.data);
+  const selectedInWatchlist = watchlistItems.some(
+    (item) => item.instrument_id === selectedInstrument.instrument_id,
+  );
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmittedQuery(query.trim());
+  }
+
+  function addSelectedInstrument() {
+    addInstrument(selectedInstrument);
+    setExportText("");
+  }
+
+  function showExportJson() {
+    setExportText(exportWatchlist());
+  }
+
+  function submitImport() {
+    try {
+      importWatchlist(importText);
+      setImportError(null);
+      setImportText("");
+      setExportText("");
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "导入失败");
+    }
   }
 
   return (
@@ -193,6 +225,64 @@ export function MarketPage() {
         ) : (
           <IndicatorGrid point={latestIndicator} parameters={indicatorsQuery.data?.parameters} />
         )}
+      </section>
+
+      <section className="watchlist-panel" aria-labelledby="watchlist-title">
+        <div className="panel-heading">
+          <div>
+            <p className="eyebrow">本地自选</p>
+            <h3 id="watchlist-title">自选列表</h3>
+          </div>
+          <div className="actions">
+            <button type="button" onClick={addSelectedInstrument} disabled={selectedInWatchlist}>
+              加入自选
+            </button>
+            <button className="secondary-button" type="button" onClick={showExportJson}>
+              导出 JSON
+            </button>
+          </div>
+        </div>
+        <p className="local-only">仅保存在当前浏览器</p>
+        <div className="watchlist-items" aria-label="自选标的">
+          {watchlistItems.length === 0 ? (
+            <p className="empty-inline">暂无自选</p>
+          ) : (
+            watchlistItems.map((item) => (
+              <div key={item.instrument_id}>
+                <button type="button" onClick={() => setSelectedInstrument(item)}>
+                  {item.name} {item.symbol}
+                </button>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => removeInstrument(item.instrument_id)}
+                >
+                  移除
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+        {exportText ? (
+          <label className="json-area">
+            <span>导出内容</span>
+            <textarea readOnly value={exportText} rows={7} />
+          </label>
+        ) : null}
+        <div className="import-row">
+          <label className="json-area">
+            <span>导入 JSON</span>
+            <textarea
+              value={importText}
+              onChange={(event) => setImportText(event.target.value)}
+              rows={7}
+            />
+          </label>
+          <button type="button" onClick={submitImport} disabled={importText.trim().length === 0}>
+            导入
+          </button>
+        </div>
+        {importError ? <p className="error-text">{importError}</p> : null}
       </section>
     </main>
   );

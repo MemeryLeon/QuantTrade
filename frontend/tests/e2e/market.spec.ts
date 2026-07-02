@@ -1,5 +1,14 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!window.sessionStorage.getItem("quanttrade.e2e.storageCleared")) {
+      window.localStorage.clear();
+      window.sessionStorage.setItem("quanttrade.e2e.storageCleared", "true");
+    }
+  });
+});
+
 test("loads market data and switches instrument", async ({ page }) => {
   await mockHealthyMarket(page);
   await page.goto("/");
@@ -45,6 +54,29 @@ test("shows market request errors", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText(/DATA_SOURCE_UNAVAILABLE|请求失败/)).toBeVisible();
+});
+
+test("persists watchlist and rejects invalid import json", async ({ page }) => {
+  await mockHealthyMarket(page);
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "加入自选" }).click();
+  await expect(
+    page.getByLabel("自选标的").getByRole("button", { name: "平安银行 000001" }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByLabel("自选标的").getByRole("button", { name: "平安银行 000001" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "导出 JSON" }).click();
+  await expect(page.getByLabel("导出内容")).toHaveValue(/"version": 1/);
+
+  await page.getByLabel("导入 JSON").fill("{bad");
+  await page.getByRole("button", { name: "导入" }).click();
+
+  await expect(page.getByText("导入 JSON 格式不正确")).toBeVisible();
 });
 
 async function mockHealthyMarket(
