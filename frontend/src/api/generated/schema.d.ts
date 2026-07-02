@@ -106,6 +106,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market/bars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bars */
+        get: operations["get_bars_market_bars_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Calendar */
+        get: operations["get_calendar_market_calendar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/data-sources/{provider}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Data Source Health */
+        get: operations["get_data_source_health_market_data_sources__provider__health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market/instruments/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Instruments */
+        get: operations["search_instruments_market_instruments_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -134,6 +202,100 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
+        /** BarResponse */
+        BarResponse: {
+            /** Close Price */
+            close_price: string;
+            /** High Price */
+            high_price: string;
+            /** Low Price */
+            low_price: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Open Price */
+            open_price: string;
+            /** Quality Flags */
+            quality_flags: components["schemas"]["QualityFlag"][];
+            /** Volume */
+            volume: number;
+        };
+        /** BarsResponse */
+        BarsResponse: {
+            /**
+             * Adjustment
+             * @enum {string}
+             */
+            adjustment: "none" | "qfq" | "hfq";
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Bars */
+            bars: components["schemas"]["BarResponse"][];
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "CNY";
+            /** Instrument Id */
+            instrument_id: string;
+            /** Is Delayed */
+            is_delayed: boolean;
+            /**
+             * Market
+             * @constant
+             */
+            market: "CN_A";
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "akshare";
+            /** Quality Flags */
+            quality_flags: components["schemas"]["QualityFlag"][];
+            /**
+             * Resolution
+             * @constant
+             */
+            resolution: "daily";
+            /** Stale Age Seconds */
+            stale_age_seconds: number | null;
+            /**
+             * Timezone
+             * @constant
+             */
+            timezone: "Asia/Shanghai";
+        };
+        /** DataSourceHealthResponse */
+        DataSourceHealthResponse: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Consecutive Failures */
+            consecutive_failures: number;
+            /** Last Error Code */
+            last_error_code: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Provider */
+            provider: string;
+            /** Stale Age Seconds */
+            stale_age_seconds: number | null;
+            /** Stale Cache Available */
+            stale_cache_available: boolean;
+            status: components["schemas"]["DataSourceStatus"];
+        };
+        /**
+         * DataSourceStatus
+         * @enum {string}
+         */
+        DataSourceStatus: "healthy" | "degraded" | "unavailable" | "recovering";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -143,6 +305,24 @@ export interface components {
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** InstrumentResponse */
+        InstrumentResponse: {
+            /** Exchange Timezone */
+            exchange_timezone: string;
+            /** Instrument Id */
+            instrument_id: string;
+            /** Market */
+            market: string;
+            /** Name */
+            name: string;
+            /** Symbol */
+            symbol: string;
+        };
+        /** InstrumentSearchResponse */
+        InstrumentSearchResponse: {
+            /** Instruments */
+            instruments: components["schemas"]["InstrumentResponse"][];
         };
         /** JobLogEntryResponse */
         JobLogEntryResponse: {
@@ -253,6 +433,22 @@ export interface components {
             total_return_percent: number;
             /** Trade Count */
             trade_count: number;
+        };
+        /**
+         * QualityFlag
+         * @enum {string}
+         */
+        QualityFlag: "MISSING_BARS" | "DUPLICATE_BARS" | "OUT_OF_ORDER" | "STALE_CACHE" | "PROVIDER_DEGRADED" | "PROVIDER_UNAVAILABLE" | "ADJUSTMENT_FACTOR_MISSING" | "CALENDAR_MISMATCH" | "TIMEZONE_AMBIGUOUS";
+        /** TradingCalendarResponse */
+        TradingCalendarResponse: {
+            /** Market */
+            market: string;
+            /** Timezone */
+            timezone: string;
+            /** Trading Days */
+            trading_days: string[];
+            /** Version */
+            version: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -440,6 +636,136 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobLogsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_bars_market_bars_get: {
+        parameters: {
+            query: {
+                instrument_id: string;
+                start: string;
+                end: string;
+                resolution?: "daily";
+                adjustment?: "none" | "qfq" | "hfq";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calendar_market_calendar_get: {
+        parameters: {
+            query: {
+                market?: "CN_A";
+                start: string;
+                end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradingCalendarResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_data_source_health_market_data_sources__provider__health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: "akshare";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSourceHealthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_instruments_market_instruments_search_get: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentSearchResponse"];
                 };
             };
             /** @description Validation Error */
