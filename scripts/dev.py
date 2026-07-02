@@ -164,11 +164,17 @@ def migration_smoke() -> None:
         command.upgrade(config, "head")
         engine = create_engine(f"sqlite:///{database_path.as_posix()}")
         try:
-            if "job_runs" not in inspect(engine).get_table_names():
+            table_names = inspect(engine).get_table_names()
+            if "job_runs" not in table_names:
                 raise CommandError("migration smoke did not create job_runs")
+            if "data_snapshots" not in table_names:
+                raise CommandError("migration smoke did not create data_snapshots")
             command.downgrade(config, "base")
-            if "job_runs" in inspect(engine).get_table_names():
+            table_names = inspect(engine).get_table_names()
+            if "job_runs" in table_names:
                 raise CommandError("migration smoke did not drop job_runs")
+            if "data_snapshots" in table_names:
+                raise CommandError("migration smoke did not drop data_snapshots")
         finally:
             engine.dispose()
     print("PASS alembic migration upgrade/downgrade")
