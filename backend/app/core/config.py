@@ -11,6 +11,17 @@ class Settings:
     environment: str
     log_level: str
     trace_header_name: str
+    database_url: str
+    redis_url: str
+    minio_endpoint: str
+    minio_access_key: str
+    minio_secret_key: str
+    minio_secure: bool
+    minio_bucket_lean_artifacts: str
+    celery_broker_url: str
+    celery_result_backend: str
+    lean_worker_concurrency: int
+    worker_prefetch_multiplier: int
 
 
 def get_settings() -> Settings:
@@ -20,5 +31,34 @@ def get_settings() -> Settings:
         environment=os.getenv("QUANTTRADE_ENV", "development"),
         log_level=os.getenv("QUANTTRADE_LOG_LEVEL", "INFO"),
         trace_header_name=os.getenv("QUANTTRADE_TRACE_HEADER", "X-Trace-ID"),
+        database_url=_database_url(),
+        redis_url=_redis_url(),
+        minio_endpoint=os.getenv("MINIO_ENDPOINT", "http://localhost:9000"),
+        minio_access_key=os.getenv("MINIO_ROOT_USER", "quanttrade_minio"),
+        minio_secret_key=os.getenv("MINIO_ROOT_PASSWORD", "quanttrade_minio_dev_password"),
+        minio_secure=os.getenv("MINIO_SECURE", "false").lower() == "true",
+        minio_bucket_lean_artifacts=os.getenv(
+            "MINIO_BUCKET_LEAN_ARTIFACTS",
+            "quanttrade-lean-artifacts",
+        ),
+        celery_broker_url=os.getenv("CELERY_BROKER_URL", _redis_url()),
+        celery_result_backend=os.getenv("CELERY_RESULT_BACKEND", _redis_url()),
+        lean_worker_concurrency=int(os.getenv("LEAN_WORKER_CONCURRENCY", "1")),
+        worker_prefetch_multiplier=int(os.getenv("WORKER_PREFETCH_MULTIPLIER", "1")),
     )
 
+
+def _database_url() -> str:
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db = os.getenv("POSTGRES_DB", "quanttrade")
+    user = os.getenv("POSTGRES_USER", "quanttrade")
+    password = os.getenv("POSTGRES_PASSWORD", "quanttrade_dev_password")
+    return os.getenv("DATABASE_URL", f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}")
+
+
+def _redis_url() -> str:
+    host = os.getenv("REDIS_HOST", "localhost")
+    port = os.getenv("REDIS_PORT", "6379")
+    db = os.getenv("REDIS_DB", "0")
+    return os.getenv("REDIS_URL", f"redis://{host}:{port}/{db}")

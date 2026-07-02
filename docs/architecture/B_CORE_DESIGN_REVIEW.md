@@ -5,7 +5,7 @@
 任务包：B-BR1
 分支：`feature/B-core-foundation`
 
-当前状态：已完成 B0、B1 草案，按门禁暂停，等待人工确认后继续 B2、B3。
+当前状态：已完成 B0、B1 草案；2026-07-02 用户确认设计评审后继续 B2、B3。
 
 ## Domain Ports
 
@@ -197,5 +197,11 @@ API → Application → Domain ← Infrastructure
 
 ## 评审结果
 
-- [ ] 通过
+- [x] 通过
 - [ ] 退回修改
+
+确认方案：
+
+- Source Identity 本地 `platform_source_tree_digest` 接受 Git Tree SHA 草案；D 阶段正式 LEAN 回测前如需覆盖构建产物，再升级为 SHA-256 清单。
+- 首个 Alembic 迁移只创建 `job_runs`；`audit_logs` 留到实际审计需求进入时创建。
+- Broker `TIMEOUT` 和 `RATE_LIMITED` 保持映射为 `STALE`；后续状态依赖型风控仍按新鲜度和对账状态 Fail Closed。

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND = ROOT / "backend"
@@ -105,6 +108,7 @@ def test() -> None:
     run(python_base() + ["-m", "ruff", "check", "app", "tests"], BACKEND)
     run(python_base() + ["-m", "mypy"], BACKEND)
     run(python_base() + ["-m", "pytest"], BACKEND)
+    migration_smoke()
 
 
 def frontend_build() -> None:
@@ -114,7 +118,67 @@ def frontend_build() -> None:
 def test_integration() -> None:
     run(docker_compose_base() + ["config"])
     check_docker_services()
+    storage_integration_smoke()
     print("PASS integration smoke: postgres/redis/minio health checks are healthy")
+
+
+def migration_smoke() -> None:
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, inspect
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        database_path = Path(tmpdir) / "migration-smoke.db"
+        config = Config(str(BACKEND / "alembic.ini"))
+        config.set_main_option("script_location", str(BACKEND / "alembic"))
+        config.set_main_option("sqlalchemy.url", f"sqlite:///{database_path.as_posix()}")
+        command.upgrade(config, "head")
+        engine = create_engine(f"sqlite:///{database_path.as_posix()}")
+        try:
+            if "job_runs" not in inspect(engine).get_table_names():
+                raise CommandError("migration smoke did not create job_runs")
+            command.downgrade(config, "base")
+            if "job_runs" in inspect(engine).get_table_names():
+                raise CommandError("migration smoke did not drop job_runs")
+        finally:
+            engine.dispose()
+    print("PASS alembic migration upgrade/downgrade")
+
+
+def storage_integration_smoke() -> None:
+    from io import BytesIO
+
+    from minio import Minio
+    from redis import Redis
+
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_client = Redis.from_url(redis_url)
+    redis_key = "quanttrade:integration:smoke"
+    redis_client.set(redis_key, b"ok", ex=60)
+    if redis_client.get(redis_key) != b"ok":
+        raise CommandError("redis integration smoke failed")
+    redis_client.delete(redis_key)
+
+    minio_url = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+    parsed = urlparse(minio_url)
+    endpoint = parsed.netloc if parsed.scheme else minio_url
+    bucket = os.getenv("MINIO_BUCKET_LEAN_ARTIFACTS", "quanttrade-lean-artifacts")
+    minio_client = Minio(
+        endpoint,
+        access_key=os.getenv("MINIO_ROOT_USER", "quanttrade_minio"),
+        secret_key=os.getenv("MINIO_ROOT_PASSWORD", "quanttrade_minio_dev_password"),
+        secure=os.getenv("MINIO_SECURE", "false").lower() == "true",
+    )
+    if not minio_client.bucket_exists(bucket):
+        minio_client.make_bucket(bucket)
+    object_name = "integration/smoke.txt"
+    payload = b"ok"
+    minio_client.put_object(bucket, object_name, BytesIO(payload), len(payload))
+    stat = minio_client.stat_object(bucket, object_name)
+    if stat.size != len(payload):
+        raise CommandError("minio integration smoke failed")
+    minio_client.remove_object(bucket, object_name)
+    print("PASS redis/minio adapter smoke")
 
 
 def check() -> None:

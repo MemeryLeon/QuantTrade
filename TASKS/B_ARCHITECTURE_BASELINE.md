@@ -56,7 +56,7 @@
 
 ### B1：配置、错误、日志与核心 Port
 
-状态：DESIGN_REVIEW
+状态：DONE
 
 #### 工作内容
 
@@ -78,6 +78,8 @@
 
 ### B2：PostgreSQL、Redis 与 MinIO 基础
 
+状态：DONE
+
 #### 工作内容
 
 - 建立 SQLAlchemy、Alembic、Redis 和 MinIO 适配器。
@@ -91,6 +93,8 @@
 - 相关测试通过后创建一次 commit。
 
 ### B3：Job、专用队列与 Mock 回测
+
+状态：DOING
 
 #### 工作内容
 
