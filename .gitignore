@@ -23,6 +23,7 @@ build/
 # Node / frontend
 node_modules/
 frontend/node_modules/
+frontend/.npm-cache/
 frontend/dist/
 frontend/.vite/
 *.tsbuildinfo
@@ -33,6 +34,7 @@ test-results/
 /data/
 /artifacts/
 /logs/
+/.tmp/
 *.log
 *.sqlite
 *.sqlite-shm

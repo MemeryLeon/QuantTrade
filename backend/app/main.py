@@ -4,18 +4,27 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
+from app.application.backtests import BacktestApplicationService
+from app.application.jobs import InMemoryJobRepository, JobService
 from app.contracts.system import ApiErrorResponse
 from app.core.config import get_settings
 from app.core.errors import ApiError
 from app.core.logging import configure_logging
 from app.core.middleware import trace_id_middleware
 from app.core.trace import get_trace_id
+from app.infrastructure.mock_backtest import MockBacktestEngine
 
 
 settings = get_settings()
 configure_logging(settings.log_level)
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+job_repository = InMemoryJobRepository()
+job_service = JobService(job_repository)
+app.state.backtest_service = BacktestApplicationService(
+    engine=MockBacktestEngine(job_service),
+    job_service=job_service,
+)
 app.middleware("http")(trace_id_middleware)
 app.include_router(api_router)
 
