@@ -33,6 +33,16 @@ class JobStatus:
     progress_percent: int
     message: str | None
     updated_at: datetime
+    retry_count: int
+    max_retries: int
+    artifact_uri: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class JobLogEntry:
+    job_id: str
+    message: str
+    created_at: datetime
 
 
 class IJobQueue(Protocol):
@@ -41,4 +51,3 @@ class IJobQueue(Protocol):
     async def get_status(self, job_id: str) -> JobStatus: ...
 
     async def cancel(self, job_id: str) -> JobStatus: ...
-
