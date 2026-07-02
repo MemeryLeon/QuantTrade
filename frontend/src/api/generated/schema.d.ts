@@ -191,6 +191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quote */
+        get: operations["get_quote_market_quote_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -276,9 +293,9 @@ export interface components {
             quality_flags: components["schemas"]["QualityFlag"][];
             /**
              * Resolution
-             * @constant
+             * @enum {string}
              */
-            resolution: "daily";
+            resolution: "daily" | "weekly" | "monthly";
             /** Stale Age Seconds */
             stale_age_seconds: number | null;
             /**
@@ -325,51 +342,24 @@ export interface components {
         };
         /** IndicatorParametersResponse */
         IndicatorParametersResponse: {
-            /**
-             * Adx Period
-             * @constant
-             */
-            adx_period: 14;
-            /**
-             * Bollinger Multiplier
-             * @constant
-             */
-            bollinger_multiplier: 2;
-            /**
-             * Bollinger Period
-             * @constant
-             */
-            bollinger_period: 20;
-            /**
-             * Ema Period
-             * @constant
-             */
-            ema_period: 20;
-            /**
-             * Macd Fast Period
-             * @constant
-             */
-            macd_fast_period: 12;
-            /**
-             * Macd Signal Period
-             * @constant
-             */
-            macd_signal_period: 9;
-            /**
-             * Macd Slow Period
-             * @constant
-             */
-            macd_slow_period: 26;
-            /**
-             * Rsi Period
-             * @constant
-             */
-            rsi_period: 14;
-            /**
-             * Sma Period
-             * @constant
-             */
-            sma_period: 20;
+            /** Adx Period */
+            adx_period: number;
+            /** Bollinger Multiplier */
+            bollinger_multiplier: string;
+            /** Bollinger Period */
+            bollinger_period: number;
+            /** Ema Period */
+            ema_period: number;
+            /** Macd Fast Period */
+            macd_fast_period: number;
+            /** Macd Signal Period */
+            macd_signal_period: number;
+            /** Macd Slow Period */
+            macd_slow_period: number;
+            /** Rsi Period */
+            rsi_period: number;
+            /** Sma Period */
+            sma_period: number;
         };
         /** IndicatorPointResponse */
         IndicatorPointResponse: {
@@ -437,9 +427,9 @@ export interface components {
             quality_flags: components["schemas"]["QualityFlag"][];
             /**
              * Resolution
-             * @constant
+             * @enum {string}
              */
-            resolution: "daily";
+            resolution: "daily" | "weekly" | "monthly";
             /** Stale Age Seconds */
             stale_age_seconds: number | null;
             /**
@@ -581,6 +571,41 @@ export interface components {
          * @enum {string}
          */
         QualityFlag: "MISSING_BARS" | "DUPLICATE_BARS" | "OUT_OF_ORDER" | "STALE_CACHE" | "PROVIDER_DEGRADED" | "PROVIDER_UNAVAILABLE" | "ADJUSTMENT_FACTOR_MISSING" | "CALENDAR_MISMATCH" | "TIMEZONE_AMBIGUOUS";
+        /** QuoteResponse */
+        QuoteResponse: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Ask Price */
+            ask_price: string | null;
+            /** Bid Price */
+            bid_price: string | null;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "CNY";
+            /** Instrument Id */
+            instrument_id: string;
+            /** Is Delayed */
+            is_delayed: boolean;
+            /** Last Price */
+            last_price: string | null;
+            /**
+             * Market
+             * @constant
+             */
+            market: "CN_A";
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "akshare";
+            /** Quality Flags */
+            quality_flags: components["schemas"]["QualityFlag"][];
+        };
         /** TradingCalendarResponse */
         TradingCalendarResponse: {
             /** Market */
@@ -797,7 +822,7 @@ export interface operations {
                 instrument_id: string;
                 start: string;
                 end: string;
-                resolution?: "daily";
+                resolution?: "daily" | "weekly" | "monthly";
                 adjustment?: "none" | "qfq" | "hfq";
             };
             header?: never;
@@ -896,8 +921,17 @@ export interface operations {
                 instrument_id: string;
                 start: string;
                 end: string;
-                resolution?: "daily";
+                resolution?: "daily" | "weekly" | "monthly";
                 adjustment?: "none" | "qfq" | "hfq";
+                sma_period?: number;
+                ema_period?: number;
+                macd_fast_period?: number;
+                macd_slow_period?: number;
+                macd_signal_period?: number;
+                rsi_period?: number;
+                bollinger_period?: number;
+                bollinger_multiplier?: number | string;
+                adx_period?: number;
             };
             header?: never;
             path?: never;
@@ -943,6 +977,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstrumentSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quote_market_quote_get: {
+        parameters: {
+            query: {
+                instrument_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteResponse"];
                 };
             };
             /** @description Validation Error */

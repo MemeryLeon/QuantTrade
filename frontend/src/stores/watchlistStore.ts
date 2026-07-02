@@ -4,7 +4,9 @@ import type { Instrument } from "../services/market";
 
 export const WATCHLIST_STORAGE_KEY = "quanttrade.watchlist.v1";
 
-export type WatchlistItem = Instrument;
+export type WatchlistItem = Instrument & {
+  added_at: string;
+};
 
 type WatchlistDocument = {
   version: 1;
@@ -26,7 +28,7 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
       if (state.items.some((item) => item.instrument_id === instrument.instrument_id)) {
         return state;
       }
-      const items = [...state.items, instrument];
+      const items = [...state.items, toWatchlistItem(instrument)];
       saveWatchlist(items);
       return { items };
     });
@@ -62,13 +64,13 @@ export function parseWatchlistDocument(content: string): WatchlistDocument {
     if (!isRecord(item)) {
       throw new Error("自选项结构不正确");
     }
-    const instrument = {
+    const instrument = toWatchlistItem({
       instrument_id: readString(item, "instrument_id"),
       symbol: readString(item, "symbol"),
       name: readString(item, "name"),
       market: readString(item, "market"),
       exchange_timezone: readString(item, "exchange_timezone"),
-    };
+    });
     if (instrument.market !== "CN_A") {
       throw new Error("当前仅支持 CN_A 自选");
     }
@@ -114,6 +116,13 @@ function dedupeItems(items: WatchlistItem[]) {
     seen.add(item.instrument_id);
     return true;
   });
+}
+
+function toWatchlistItem(instrument: Instrument): WatchlistItem {
+  return {
+    ...instrument,
+    added_at: new Date().toISOString(),
+  };
 }
 
 function canUseLocalStorage() {

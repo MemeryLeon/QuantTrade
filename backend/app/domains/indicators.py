@@ -5,10 +5,41 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from app.domains.market import QualityFlag
+from app.domains.market import BarsRequest, QualityFlag
 
 
 IndicatorSeries = tuple[Decimal | None, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class IndicatorRequest:
+    bars_request: BarsRequest
+    sma_period: int = 20
+    ema_period: int = 20
+    macd_fast_period: int = 12
+    macd_slow_period: int = 26
+    macd_signal_period: int = 9
+    rsi_period: int = 14
+    bollinger_period: int = 20
+    bollinger_multiplier: Decimal = Decimal("2")
+    adx_period: int = 14
+
+    def __post_init__(self) -> None:
+        for period in (
+            self.sma_period,
+            self.ema_period,
+            self.macd_fast_period,
+            self.macd_slow_period,
+            self.macd_signal_period,
+            self.rsi_period,
+            self.bollinger_period,
+            self.adx_period,
+        ):
+            _require_period(period)
+        if self.macd_fast_period >= self.macd_slow_period:
+            raise ValueError("macd_fast_period must be smaller than macd_slow_period")
+        if self.bollinger_multiplier <= 0:
+            raise ValueError("bollinger_multiplier must be positive")
 
 
 @dataclass(frozen=True, slots=True)

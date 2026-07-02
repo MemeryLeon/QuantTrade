@@ -25,7 +25,9 @@ describe("watchlist store", () => {
 
     const stored = window.localStorage.getItem(WATCHLIST_STORAGE_KEY);
     expect(stored).not.toBeNull();
-    expect(parseWatchlistDocument(stored ?? "").items).toEqual([instrument]);
+    const items = parseWatchlistDocument(stored ?? "").items;
+    expect(items[0]).toMatchObject(instrument);
+    expect(Date.parse(items[0].added_at)).not.toBeNaN();
   });
 
   it("imports valid json and rejects invalid json", () => {
@@ -33,7 +35,10 @@ describe("watchlist store", () => {
       .getState()
       .importJson(JSON.stringify({ version: 1, items: [instrument, instrument] }));
 
-    expect(useWatchlistStore.getState().items).toEqual([instrument]);
+    const items = useWatchlistStore.getState().items;
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject(instrument);
+    expect(Date.parse(items[0].added_at)).not.toBeNaN();
     expect(() => useWatchlistStore.getState().importJson("{bad")).toThrow("导入 JSON 格式不正确");
     expect(() => useWatchlistStore.getState().importJson(JSON.stringify({ version: 2 }))).toThrow(
       "quanttrade.watchlist.v1",

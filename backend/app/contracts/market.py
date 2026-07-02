@@ -9,6 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.domains.market import DataSourceStatus, QualityFlag
 
 
+MarketResolution = Literal["daily", "weekly", "monthly"]
+AdjustmentMode = Literal["none", "qfq", "hfq"]
+
+
 class InstrumentResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -37,6 +41,21 @@ class BarResponse(BaseModel):
     quality_flags: tuple[QualityFlag, ...]
 
 
+class QuoteResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    instrument_id: str
+    provider: Literal["akshare"]
+    market: Literal["CN_A"]
+    currency: Literal["CNY"]
+    bid_price: Decimal | None
+    ask_price: Decimal | None
+    last_price: Decimal | None
+    as_of: datetime
+    is_delayed: bool
+    quality_flags: tuple[QualityFlag, ...]
+
+
 class BarsResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -44,8 +63,8 @@ class BarsResponse(BaseModel):
     provider: Literal["akshare"]
     market: Literal["CN_A"]
     currency: Literal["CNY"]
-    resolution: Literal["daily"]
-    adjustment: Literal["none", "qfq", "hfq"]
+    resolution: MarketResolution
+    adjustment: AdjustmentMode
     timezone: Literal["Asia/Shanghai"]
     bars: tuple[BarResponse, ...]
     as_of: datetime
@@ -73,15 +92,15 @@ class IndicatorPointResponse(BaseModel):
 class IndicatorParametersResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    sma_period: Literal[20]
-    ema_period: Literal[20]
-    macd_fast_period: Literal[12]
-    macd_slow_period: Literal[26]
-    macd_signal_period: Literal[9]
-    rsi_period: Literal[14]
-    bollinger_period: Literal[20]
-    bollinger_multiplier: Literal[2]
-    adx_period: Literal[14]
+    sma_period: int
+    ema_period: int
+    macd_fast_period: int
+    macd_slow_period: int
+    macd_signal_period: int
+    rsi_period: int
+    bollinger_period: int
+    bollinger_multiplier: Decimal
+    adx_period: int
 
 
 class IndicatorsResponse(BaseModel):
@@ -91,8 +110,8 @@ class IndicatorsResponse(BaseModel):
     provider: Literal["akshare"]
     market: Literal["CN_A"]
     currency: Literal["CNY"]
-    resolution: Literal["daily"]
-    adjustment: Literal["none", "qfq", "hfq"]
+    resolution: MarketResolution
+    adjustment: AdjustmentMode
     timezone: Literal["Asia/Shanghai"]
     parameters: IndicatorParametersResponse
     points: tuple[IndicatorPointResponse, ...]

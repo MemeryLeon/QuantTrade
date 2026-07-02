@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from app.api.v1.dependencies import get_market_data_service
 from app.application.market_data import MarketDataApplicationService
 from app.core.config import get_settings
-from app.domains.market import BarsRequest, DataSourceStatus, QualityFlag
+from app.domains.market import BarsRequest, DataSourceStatus, MarketDataUnavailable, QualityFlag
 from app.infrastructure.akshare_market_data import AKSHARE_PROVIDER, AkshareDataProvider
 from app.infrastructure.cache import RedisCache
 from app.main import app
@@ -29,9 +29,12 @@ class FakeFrame:
 class FakeAkshare:
     def __init__(self) -> None:
         self.fail_hist = False
+        self.fail_spot = False
         self.hist_calls = 0
 
     def stock_zh_a_spot_em(self) -> FakeFrame:
+        if self.fail_spot:
+            raise RuntimeError("provider timeout")
         return FakeFrame(
             [
                 {"代码": "000001", "名称": "平安银行", "最新价": "10.10"},
@@ -164,6 +167,42 @@ def test_akshare_provider_returns_daily_bars_and_calendar() -> None:
     )
 
 
+def test_akshare_provider_aggregates_weekly_and_monthly_bars_from_daily_bars() -> None:
+    fake_akshare = FakeAkshare()
+    provider = _provider(fake_akshare, FakeRedis())
+    base_request = BarsRequest(
+        instrument_id="CN_A:000001",
+        start=datetime(2026, 7, 1, tzinfo=timezone.utc),
+        end=datetime(2026, 7, 30, tzinfo=timezone.utc),
+        resolution="weekly",
+        adjustment="none",
+    )
+
+    weekly = asyncio.run(provider.get_bars(base_request))
+    monthly = asyncio.run(
+        provider.get_bars(
+            BarsRequest(
+                instrument_id=base_request.instrument_id,
+                start=base_request.start,
+                end=base_request.end,
+                resolution="monthly",
+                adjustment=base_request.adjustment,
+            )
+        )
+    )
+
+    assert len(weekly.bars) == 5
+    assert weekly.bars[0].open_price == Decimal("10.00")
+    assert weekly.bars[0].high_price == Decimal("10.70")
+    assert weekly.bars[0].low_price == Decimal("9.80")
+    assert weekly.bars[0].close_price == Decimal("10.50")
+    assert weekly.bars[0].volume == 5010
+    assert len(monthly.bars) == 1
+    assert monthly.bars[0].open_price == Decimal("10.00")
+    assert monthly.bars[0].close_price == Decimal("13.00")
+    assert monthly.bars[0].volume == 30435
+
+
 def test_akshare_provider_marks_stale_cache_when_provider_degrades() -> None:
     fake_akshare = FakeAkshare()
     provider = _provider(fake_akshare, FakeRedis())
@@ -188,14 +227,34 @@ def test_akshare_provider_reports_unavailable_after_failure_threshold() -> None:
     fake_akshare.fail_hist = True
     provider = _provider(fake_akshare, FakeRedis())
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(MarketDataUnavailable):
         asyncio.run(provider.get_bars(_request()))
-    with pytest.raises(RuntimeError):
+    with pytest.raises(MarketDataUnavailable):
         asyncio.run(provider.get_bars(_request()))
 
     health = asyncio.run(provider.get_health(AKSHARE_PROVIDER))
     assert health.status is DataSourceStatus.UNAVAILABLE
     assert health.consecutive_failures == 2
+
+
+def test_market_quote_api_returns_503_when_provider_is_unavailable() -> None:
+    fake_akshare = FakeAkshare()
+    fake_akshare.fail_spot = True
+    provider = _provider(fake_akshare, FakeRedis())
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get("/market/quote", params={"instrument_id": "CN_A:000001"})
+        health = asyncio.run(provider.get_health(AKSHARE_PROVIDER))
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    payload = response.json()
+    assert payload["code"] == "DATA_SOURCE_UNAVAILABLE"
+    assert payload["details"]["provider"] == "akshare"
+    assert health.status is DataSourceStatus.DEGRADED
 
 
 def test_market_health_api_uses_application_service() -> None:
@@ -230,6 +289,15 @@ def test_market_indicators_api_returns_backend_computed_series() -> None:
                 "end": "2026-07-30T00:00:00Z",
                 "resolution": "daily",
                 "adjustment": "none",
+                "sma_period": 5,
+                "ema_period": 6,
+                "macd_fast_period": 3,
+                "macd_slow_period": 8,
+                "macd_signal_period": 4,
+                "rsi_period": 5,
+                "bollinger_period": 7,
+                "bollinger_multiplier": "2.5",
+                "adx_period": 5,
             },
         )
     finally:
@@ -239,8 +307,59 @@ def test_market_indicators_api_returns_backend_computed_series() -> None:
     payload = response.json()
     assert payload["provider"] == "akshare"
     assert payload["timezone"] == "Asia/Shanghai"
-    assert payload["parameters"]["sma_period"] == 20
+    assert payload["parameters"]["sma_period"] == 5
+    assert payload["parameters"]["ema_period"] == 6
+    assert payload["parameters"]["macd_fast_period"] == 3
+    assert payload["parameters"]["macd_slow_period"] == 8
+    assert payload["parameters"]["bollinger_multiplier"] == "2.5"
     assert len(payload["points"]) == 30
     assert payload["points"][0]["sma"] is None
     assert payload["points"][-1]["sma"] is not None
     assert payload["points"][-1]["macd"] is not None
+
+
+def test_market_bars_api_accepts_weekly_resolution() -> None:
+    fake_akshare = FakeAkshare()
+    provider = _provider(fake_akshare, FakeRedis(), max_value_bytes=65_536)
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get(
+            "/market/bars",
+            params={
+                "instrument_id": "CN_A:000001",
+                "start": "2026-07-01T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "resolution": "weekly",
+                "adjustment": "none",
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["resolution"] == "weekly"
+    assert len(payload["bars"]) == 5
+    assert payload["bars"][0]["volume"] == 5010
+
+
+def test_market_quote_api_returns_backend_quote_contract() -> None:
+    fake_akshare = FakeAkshare()
+    provider = _provider(fake_akshare, FakeRedis())
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get("/market/quote", params={"instrument_id": "CN_A:000001"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["provider"] == "akshare"
+    assert payload["market"] == "CN_A"
+    assert payload["currency"] == "CNY"
+    assert payload["last_price"] == "10.10"
+    assert payload["is_delayed"] is False

@@ -15,11 +15,37 @@ test("loads market data and switches instrument", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: /平安银行/ })).toBeVisible();
   await expect(page.getByText("K 线与成交量")).toBeVisible();
+  await expect(page.getByText("10.1000")).toBeVisible();
   await expect(page.getByText("SMA20")).toBeVisible();
 
   await page.getByRole("button", { name: "浦发银行 600000" }).click();
 
   await expect(page.getByRole("heading", { name: /浦发银行/ })).toBeVisible();
+});
+
+test("switches resolution, adjustment and indicator parameters", async ({ page }) => {
+  const indicatorUrls: string[] = [];
+  const barUrls: string[] = [];
+  await mockHealthyMarket(page, {
+    onBarsRequest: (url) => barUrls.push(url),
+    onIndicatorsRequest: (url) => indicatorUrls.push(url),
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "周线" }).click();
+  await page.getByLabel("复权").selectOption("hfq");
+  await page.getByLabel("指标管理").getByLabel("MACD 快线").fill("5");
+  await page.getByLabel("指标管理").getByText("ADX").click();
+
+  await expect.poll(() => barUrls.some((url) => url.includes("resolution=weekly"))).toBeTruthy();
+  await expect.poll(() => barUrls.some((url) => url.includes("adjustment=hfq"))).toBeTruthy();
+  await expect
+    .poll(() => indicatorUrls.some((url) => url.includes("macd_fast_period=5")))
+    .toBeTruthy();
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "周线" })).toHaveClass(/selected/);
+  await expect(page.getByLabel("复权")).toHaveValue("hfq");
 });
 
 test("shows global warning when data source degrades", async ({ page }) => {
@@ -40,6 +66,9 @@ test("shows market request errors", async ({ page }) => {
   });
   await page.route("**/market/instruments/search**", async (route) => {
     await route.fulfill({ json: searchPayload() });
+  });
+  await page.route("**/market/quote**", async (route) => {
+    await route.fulfill({ json: quotePayload(false) });
   });
   await page.route("**/market/bars**", async (route) => {
     await route.fulfill({
@@ -81,7 +110,12 @@ test("persists watchlist and rejects invalid import json", async ({ page }) => {
 
 async function mockHealthyMarket(
   page: Page,
-  options: { healthStatus?: "healthy" | "degraded"; delayed?: boolean } = {},
+  options: {
+    healthStatus?: "healthy" | "degraded";
+    delayed?: boolean;
+    onBarsRequest?: (url: string) => void;
+    onIndicatorsRequest?: (url: string) => void;
+  } = {},
 ) {
   const healthStatus = options.healthStatus ?? "healthy";
   const delayed = options.delayed ?? false;
@@ -91,12 +125,32 @@ async function mockHealthyMarket(
   await page.route("**/market/instruments/search**", async (route) => {
     await route.fulfill({ json: searchPayload() });
   });
+  await page.route("**/market/quote**", async (route) => {
+    await route.fulfill({ json: quotePayload(delayed) });
+  });
   await page.route("**/market/bars**", async (route) => {
+    options.onBarsRequest?.(route.request().url());
     await route.fulfill({ json: barsPayload(delayed) });
   });
   await page.route("**/market/indicators**", async (route) => {
+    options.onIndicatorsRequest?.(route.request().url());
     await route.fulfill({ json: indicatorsPayload(delayed) });
   });
+}
+
+function quotePayload(delayed: boolean) {
+  return {
+    instrument_id: "CN_A:000001",
+    provider: "akshare",
+    market: "CN_A",
+    currency: "CNY",
+    bid_price: null,
+    ask_price: null,
+    last_price: "10.10",
+    as_of: "2026-07-02T07:00:00Z",
+    is_delayed: delayed,
+    quality_flags: delayed ? ["STALE_CACHE", "PROVIDER_DEGRADED"] : [],
+  };
 }
 
 function healthPayload(status: "healthy" | "degraded") {

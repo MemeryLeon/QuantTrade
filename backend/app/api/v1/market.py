@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.v1.dependencies import get_market_data_service
 from app.application.market_data import MarketDataApplicationService
 from app.contracts.market import (
+    AdjustmentMode,
     BarResponse,
     BarsResponse,
     DataSourceHealthResponse,
@@ -17,10 +18,13 @@ from app.contracts.market import (
     IndicatorsResponse,
     InstrumentResponse,
     InstrumentSearchResponse,
+    MarketResolution,
+    QuoteResponse,
     TradingCalendarResponse,
 )
 from app.core.errors import ApiError
-from app.domains.market import BarsRequest
+from app.domains.indicators import IndicatorRequest
+from app.domains.market import BarsRequest, MarketDataUnavailable
 
 
 router = APIRouter(prefix="/market", tags=["market"])
@@ -31,7 +35,10 @@ async def search_instruments(
     query: str = Query(min_length=1),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> InstrumentSearchResponse:
-    instruments = await service.search_instruments(query)
+    try:
+        instruments = await service.search_instruments(query)
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc) from exc
     return InstrumentSearchResponse(
         instruments=tuple(
             InstrumentResponse(
@@ -46,13 +53,43 @@ async def search_instruments(
     )
 
 
+@router.get("/quote")
+async def get_quote(
+    instrument_id: str,
+    service: MarketDataApplicationService = Depends(get_market_data_service),
+) -> QuoteResponse:
+    try:
+        quote = await service.get_quote(instrument_id)
+    except (KeyError, ValueError) as exc:
+        raise ApiError(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message=str(exc),
+            details={"instrument_id": instrument_id},
+        ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
+    return QuoteResponse(
+        instrument_id=quote.instrument_id,
+        provider="akshare",
+        market="CN_A",
+        currency="CNY",
+        bid_price=None if quote.bid_price is None else Decimal(quote.bid_price),
+        ask_price=None if quote.ask_price is None else Decimal(quote.ask_price),
+        last_price=None if quote.last_price is None else Decimal(quote.last_price),
+        as_of=quote.as_of,
+        is_delayed=quote.is_delayed,
+        quality_flags=quote.quality_flags,
+    )
+
+
 @router.get("/bars")
 async def get_bars(
     instrument_id: str,
     start: datetime,
     end: datetime,
-    resolution: Literal["daily"] = "daily",
-    adjustment: Literal["none", "qfq", "hfq"] = "none",
+    resolution: MarketResolution = "daily",
+    adjustment: AdjustmentMode = "none",
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> BarsResponse:
     try:
@@ -72,6 +109,8 @@ async def get_bars(
             message=str(exc),
             details={"instrument_id": instrument_id},
         ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
     return BarsResponse(
         instrument_id=result.instrument_id,
         provider="akshare",
@@ -104,18 +143,38 @@ async def get_indicators(
     instrument_id: str,
     start: datetime,
     end: datetime,
-    resolution: Literal["daily"] = "daily",
-    adjustment: Literal["none", "qfq", "hfq"] = "none",
+    resolution: MarketResolution = "daily",
+    adjustment: AdjustmentMode = "none",
+    sma_period: int = Query(default=20, ge=2, le=250),
+    ema_period: int = Query(default=20, ge=2, le=250),
+    macd_fast_period: int = Query(default=12, ge=2, le=250),
+    macd_slow_period: int = Query(default=26, ge=3, le=500),
+    macd_signal_period: int = Query(default=9, ge=2, le=250),
+    rsi_period: int = Query(default=14, ge=2, le=250),
+    bollinger_period: int = Query(default=20, ge=2, le=250),
+    bollinger_multiplier: Decimal = Query(default=Decimal("2"), gt=0, le=10),
+    adx_period: int = Query(default=14, ge=2, le=250),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> IndicatorsResponse:
     try:
         result = await service.get_indicators(
-            BarsRequest(
-                instrument_id=instrument_id,
-                start=start,
-                end=end,
-                resolution=resolution,
-                adjustment=adjustment,
+            IndicatorRequest(
+                bars_request=BarsRequest(
+                    instrument_id=instrument_id,
+                    start=start,
+                    end=end,
+                    resolution=resolution,
+                    adjustment=adjustment,
+                ),
+                sma_period=sma_period,
+                ema_period=ema_period,
+                macd_fast_period=macd_fast_period,
+                macd_slow_period=macd_slow_period,
+                macd_signal_period=macd_signal_period,
+                rsi_period=rsi_period,
+                bollinger_period=bollinger_period,
+                bollinger_multiplier=bollinger_multiplier,
+                adx_period=adx_period,
             )
         )
     except ValueError as exc:
@@ -125,6 +184,8 @@ async def get_indicators(
             message=str(exc),
             details={"instrument_id": instrument_id},
         ) from exc
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc, instrument_id=instrument_id) from exc
     return IndicatorsResponse(
         instrument_id=result.instrument_id,
         provider="akshare",
@@ -134,15 +195,15 @@ async def get_indicators(
         adjustment=adjustment,
         timezone="Asia/Shanghai",
         parameters=IndicatorParametersResponse(
-            sma_period=20,
-            ema_period=20,
-            macd_fast_period=12,
-            macd_slow_period=26,
-            macd_signal_period=9,
-            rsi_period=14,
-            bollinger_period=20,
-            bollinger_multiplier=2,
-            adx_period=14,
+            sma_period=sma_period,
+            ema_period=ema_period,
+            macd_fast_period=macd_fast_period,
+            macd_slow_period=macd_slow_period,
+            macd_signal_period=macd_signal_period,
+            rsi_period=rsi_period,
+            bollinger_period=bollinger_period,
+            bollinger_multiplier=bollinger_multiplier,
+            adx_period=adx_period,
         ),
         points=tuple(
             IndicatorPointResponse(
@@ -182,7 +243,10 @@ async def get_calendar(
     end: date = Query(),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> TradingCalendarResponse:
-    calendar = await service.get_calendar(market, start, end)
+    try:
+        calendar = await service.get_calendar(market, start, end)
+    except MarketDataUnavailable as exc:
+        raise _data_source_unavailable(exc) from exc
     return TradingCalendarResponse(
         market=calendar.market,
         version=calendar.version,
@@ -206,4 +270,20 @@ async def get_data_source_health(
         last_error_code=health.last_error_code,
         stale_cache_available=health.stale_cache_available,
         stale_age_seconds=health.stale_age_seconds,
+    )
+
+
+def _data_source_unavailable(
+    exc: MarketDataUnavailable,
+    *,
+    instrument_id: str | None = None,
+) -> ApiError:
+    details = {"provider": exc.provider, "error_code": exc.error_code}
+    if instrument_id is not None:
+        details["instrument_id"] = instrument_id
+    return ApiError(
+        status_code=503,
+        code="DATA_SOURCE_UNAVAILABLE",
+        message="行情数据源暂不可用，请检查网络代理或稍后重试",
+        details=details,
     )
