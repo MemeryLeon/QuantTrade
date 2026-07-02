@@ -29,6 +29,8 @@ from app.infrastructure.cache import RedisCache, RedisKeyDefinition
 
 AKSHARE_PROVIDER = "akshare"
 SUPPORTED_DAILY_LOOKBACK_DAYS = 366 * 5
+SUPPORTED_RESOLUTIONS = {"daily", "weekly", "monthly"}
+SUPPORTED_ADJUSTMENTS = {"none", "qfq", "hfq"}
 
 
 class TableLike(Protocol):
@@ -112,7 +114,7 @@ class AkshareDataProvider:
         return tuple(instruments)
 
     async def get_bars(self, request: BarsRequest) -> BarsResult:
-        _validate_daily_request(request)
+        _validate_bars_request(request)
         identity = _bars_cache_identity(request)
         cached = self._cache.get_bytes(self._bars_cache_key, identity)
         if cached is not None and cached.is_fresh:
@@ -195,8 +197,10 @@ class AkshareDataProvider:
                 timeout=10,
             )
         )
-        bars = tuple(_bar_from_record(record) for record in records)
-        flags = _bars_quality_flags(bars)
+        daily_bars = tuple(_bar_from_record(record) for record in records)
+        daily_flags = _bars_quality_flags(daily_bars)
+        bars = _bars_for_resolution(daily_bars, request.resolution)
+        flags = tuple(dict.fromkeys((*daily_flags, *_bars_quality_flags(bars))))
         return BarsResult(
             instrument_id=request.instrument_id,
             bars=bars,
@@ -269,12 +273,12 @@ def _load_akshare() -> AkshareModule:
     return cast(AkshareModule, importlib.import_module("akshare"))
 
 
-def _validate_daily_request(request: BarsRequest) -> None:
-    if request.resolution != "daily":
-        raise ValueError("only daily bars are supported in phase C1")
+def _validate_bars_request(request: BarsRequest) -> None:
+    if request.resolution not in SUPPORTED_RESOLUTIONS:
+        raise ValueError("unsupported bars resolution")
     if (request.end - request.start).days > SUPPORTED_DAILY_LOOKBACK_DAYS:
         raise ValueError("daily bars request exceeds supported 5-year range")
-    if request.adjustment not in {"none", "qfq", "hfq"}:
+    if request.adjustment not in SUPPORTED_ADJUSTMENTS:
         raise ValueError("unsupported adjustment")
 
 
@@ -313,6 +317,46 @@ def _bars_quality_flags(bars: tuple[Bar, ...]) -> tuple[QualityFlag, ...]:
     if observed != sorted(observed):
         flags.append(QualityFlag.OUT_OF_ORDER)
     return tuple(flags)
+
+
+def _bars_for_resolution(bars: tuple[Bar, ...], resolution: str) -> tuple[Bar, ...]:
+    ordered_bars = tuple(sorted(bars, key=lambda bar: bar.observed_at))
+    if resolution == "daily":
+        return ordered_bars
+    if resolution not in {"weekly", "monthly"}:
+        raise ValueError("unsupported bars resolution")
+    return _aggregate_bars(ordered_bars, resolution)
+
+
+def _aggregate_bars(bars: tuple[Bar, ...], resolution: str) -> tuple[Bar, ...]:
+    grouped: dict[tuple[int, int], list[Bar]] = {}
+    for bar in bars:
+        local_day = bar.observed_at.astimezone(ZoneInfo(CHINA_A_EXCHANGE_TIMEZONE)).date()
+        if resolution == "weekly":
+            iso_year, iso_week, _ = local_day.isocalendar()
+            key = (iso_year, iso_week)
+        else:
+            key = (local_day.year, local_day.month)
+        grouped.setdefault(key, []).append(bar)
+
+    aggregated: list[Bar] = []
+    for key in sorted(grouped):
+        bucket = grouped[key]
+        quality_flags = tuple(
+            dict.fromkeys(flag for bar in bucket for flag in bar.quality_flags)
+        )
+        aggregated.append(
+            Bar(
+                observed_at=bucket[-1].observed_at,
+                open_price=bucket[0].open_price,
+                high_price=max(bar.high_price for bar in bucket),
+                low_price=min(bar.low_price for bar in bucket),
+                close_price=bucket[-1].close_price,
+                volume=sum(bar.volume for bar in bucket),
+                quality_flags=quality_flags,
+            )
+        )
+    return tuple(aggregated)
 
 
 def _record_date(record: Mapping[str, object]) -> date:
@@ -407,4 +451,3 @@ def _decode_bars(value: bytes) -> BarsResult:
         stale_age_seconds=payload["stale_age_seconds"],
         quality_flags=tuple(QualityFlag(flag) for flag in payload["quality_flags"]),
     )
-

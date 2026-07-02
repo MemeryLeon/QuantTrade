@@ -9,6 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.domains.market import DataSourceStatus, QualityFlag
 
 
+MarketResolution = Literal["daily", "weekly", "monthly"]
+AdjustmentMode = Literal["none", "qfq", "hfq"]
+
+
 class InstrumentResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -44,8 +48,8 @@ class BarsResponse(BaseModel):
     provider: Literal["akshare"]
     market: Literal["CN_A"]
     currency: Literal["CNY"]
-    resolution: Literal["daily"]
-    adjustment: Literal["none", "qfq", "hfq"]
+    resolution: MarketResolution
+    adjustment: AdjustmentMode
     timezone: Literal["Asia/Shanghai"]
     bars: tuple[BarResponse, ...]
     as_of: datetime
@@ -91,8 +95,8 @@ class IndicatorsResponse(BaseModel):
     provider: Literal["akshare"]
     market: Literal["CN_A"]
     currency: Literal["CNY"]
-    resolution: Literal["daily"]
-    adjustment: Literal["none", "qfq", "hfq"]
+    resolution: MarketResolution
+    adjustment: AdjustmentMode
     timezone: Literal["Asia/Shanghai"]
     parameters: IndicatorParametersResponse
     points: tuple[IndicatorPointResponse, ...]

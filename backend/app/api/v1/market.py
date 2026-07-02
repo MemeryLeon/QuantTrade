@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from app.api.v1.dependencies import get_market_data_service
 from app.application.market_data import MarketDataApplicationService
 from app.contracts.market import (
+    AdjustmentMode,
     BarResponse,
     BarsResponse,
     DataSourceHealthResponse,
@@ -17,6 +18,7 @@ from app.contracts.market import (
     IndicatorsResponse,
     InstrumentResponse,
     InstrumentSearchResponse,
+    MarketResolution,
     TradingCalendarResponse,
 )
 from app.core.errors import ApiError
@@ -51,8 +53,8 @@ async def get_bars(
     instrument_id: str,
     start: datetime,
     end: datetime,
-    resolution: Literal["daily"] = "daily",
-    adjustment: Literal["none", "qfq", "hfq"] = "none",
+    resolution: MarketResolution = "daily",
+    adjustment: AdjustmentMode = "none",
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> BarsResponse:
     try:
@@ -104,8 +106,8 @@ async def get_indicators(
     instrument_id: str,
     start: datetime,
     end: datetime,
-    resolution: Literal["daily"] = "daily",
-    adjustment: Literal["none", "qfq", "hfq"] = "none",
+    resolution: MarketResolution = "daily",
+    adjustment: AdjustmentMode = "none",
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> IndicatorsResponse:
     try:
