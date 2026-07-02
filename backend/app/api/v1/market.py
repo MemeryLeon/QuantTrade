@@ -145,7 +145,7 @@ async def get_indicators(
     macd_signal_period: int = Query(default=9, ge=2, le=250),
     rsi_period: int = Query(default=14, ge=2, le=250),
     bollinger_period: int = Query(default=20, ge=2, le=250),
-    bollinger_multiplier: Decimal = Query(default=Decimal("2"), gt=0, le=Decimal("10")),
+    bollinger_multiplier: Decimal = Query(default=Decimal("2"), gt=0, le=10),
     adx_period: int = Query(default=14, ge=2, le=250),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> IndicatorsResponse:

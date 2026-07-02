@@ -201,6 +201,67 @@ textarea {
 
 .market-workspace {
   width: min(1320px, 100%);
+  color: #d6dee8;
+}
+
+.app-shell:has(.market-workspace) {
+  background: #090d12;
+}
+
+.app-shell:has(.market-workspace) .top-bar {
+  border-bottom-color: #1d2835;
+  background: #0d141c;
+}
+
+.app-shell:has(.market-workspace) .top-bar h1,
+.app-shell:has(.market-workspace) .top-bar p {
+  color: #edf3f8;
+}
+
+.app-shell:has(.market-workspace) nav a {
+  color: #93c5fd;
+}
+
+.app-shell:has(.market-workspace) nav a.active {
+  color: #f8fafc;
+}
+
+.market-workspace .eyebrow,
+.market-workspace span,
+.market-workspace .local-only,
+.market-workspace .empty-inline,
+.market-workspace .chart-footnote {
+  color: #93a4b7;
+}
+
+.market-workspace strong {
+  color: #f8fafc;
+}
+
+.market-workspace input,
+.market-workspace select,
+.market-workspace textarea {
+  border-color: #263546;
+  background: #0f1721;
+  color: #edf3f8;
+}
+
+.market-workspace input:focus,
+.market-workspace select:focus,
+.market-workspace textarea:focus {
+  border-color: #38bdf8;
+  outline: 2px solid rgb(56 189 248 / 24%);
+}
+
+.market-workspace button {
+  border-color: #2563eb;
+  background: #2563eb;
+}
+
+.market-workspace .secondary-button {
+  border-color: #314257;
+  background: #111c29;
+  color: #d6dee8;
 }
 
 .global-warning {
@@ -236,6 +297,7 @@ textarea {
 .market-header h2 {
   margin: 0;
   font-size: 24px;
+  color: #f8fafc;
 }
 
 .market-header h2 span {
@@ -264,7 +326,7 @@ textarea {
 .segmented-control {
   display: inline-grid;
   grid-template-columns: repeat(3, minmax(64px, 1fr));
-  border: 1px solid #c6ced8;
+  border: 1px solid #263546;
   border-radius: 6px;
   overflow: hidden;
 }
@@ -273,12 +335,12 @@ textarea {
   min-height: 38px;
   border: 0;
   border-radius: 0;
-  background: #ffffff;
-  color: #26384d;
+  background: #0f1721;
+  color: #cbd5e1;
 }
 
 .segmented-control button.selected {
-  background: #1d4f91;
+  background: #2563eb;
   color: #ffffff;
 }
 
@@ -296,22 +358,22 @@ textarea {
 .recent-list::before {
   content: "最近访问";
   align-self: center;
-  color: #647184;
+  color: #93a4b7;
   font-size: 13px;
 }
 
 .instrument-list button {
   min-height: 34px;
-  border-color: #c6ced8;
-  background: #ffffff;
-  color: #26384d;
+  border-color: #263546;
+  background: #0f1721;
+  color: #d6dee8;
   padding: 0 12px;
 }
 
 .instrument-list button.selected {
-  border-color: #1d4f91;
-  background: #e8f1ff;
-  color: #12315a;
+  border-color: #38bdf8;
+  background: #082f49;
+  color: #f8fafc;
 }
 
 .market-grid {
@@ -325,9 +387,9 @@ textarea {
 .indicator-panel,
 .watchlist-panel,
 .market-side {
-  border: 1px solid #d6dde6;
+  border: 1px solid #1d2835;
   border-radius: 6px;
-  background: #ffffff;
+  background: #0d141c;
   padding: 16px;
 }
 
@@ -378,8 +440,9 @@ textarea {
 .market-side > div,
 .indicator-grid > div {
   min-height: 76px;
-  border: 1px solid #edf0f4;
+  border: 1px solid #1d2835;
   border-radius: 6px;
+  background: #0f1721;
   padding: 12px;
 }
 
@@ -400,8 +463,9 @@ textarea {
   grid-template-columns: 22px minmax(42px, 1fr) minmax(58px, 76px);
   gap: 8px;
   align-items: center;
-  border: 1px solid #edf0f4;
+  border: 1px solid #1d2835;
   border-radius: 6px;
+  background: #0f1721;
   padding: 8px;
 }
 
@@ -436,8 +500,8 @@ textarea {
   min-height: 320px;
   display: grid;
   place-items: center;
-  border: 1px solid #e2e8f0;
-  color: #647184;
+  border: 1px solid #1d2835;
+  color: #93a4b7;
   margin: 0;
 }
 
@@ -461,9 +525,9 @@ textarea {
 
 .watchlist-items button:first-child {
   justify-content: start;
-  border-color: #c6ced8;
-  background: #ffffff;
-  color: #26384d;
+  border-color: #263546;
+  background: #0f1721;
+  color: #d6dee8;
   display: grid;
   gap: 2px;
   overflow-wrap: anywhere;
@@ -471,7 +535,7 @@ textarea {
 }
 
 .watchlist-items button:first-child strong {
-  color: #26384d;
+  color: #f8fafc;
 }
 
 .watchlist-items button:first-child span {

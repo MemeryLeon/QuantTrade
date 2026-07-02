@@ -64,6 +64,9 @@ const defaultVisibleIndicators: Record<IndicatorKey, boolean> = {
 };
 
 const MARKET_PREFERENCES_KEY = "quanttrade.market.preferences.v1";
+const SEARCH_STALE_MS = 60_000;
+const MARKET_DATA_STALE_MS = 30_000;
+const QUOTE_STALE_MS = 15_000;
 
 type MarketPreferences = {
   resolution: MarketResolution;
@@ -116,11 +119,13 @@ export function MarketPage() {
     queryKey: ["market-search", submittedQuery],
     queryFn: () => searchInstruments(submittedQuery),
     enabled: submittedQuery.trim().length > 0,
+    staleTime: SEARCH_STALE_MS,
   });
   const quoteQuery = useQuery({
     queryKey: ["market-quote", selectedInstrument.instrument_id],
     queryFn: () => getQuote(selectedInstrument.instrument_id),
     refetchInterval: 30_000,
+    staleTime: QUOTE_STALE_MS,
   });
   const barsQuery = useQuery({
     queryKey: ["market-bars", selectedInstrument.instrument_id, startDate, endDate, resolution, adjustment],
@@ -132,6 +137,7 @@ export function MarketPage() {
         resolution,
         adjustment,
       }),
+    staleTime: MARKET_DATA_STALE_MS,
   });
   const indicatorsQuery = useQuery({
     queryKey: [
@@ -152,6 +158,7 @@ export function MarketPage() {
         adjustment,
         parameters: indicatorParameters,
       }),
+    staleTime: MARKET_DATA_STALE_MS,
   });
 
   useEffect(() => {
@@ -796,7 +803,7 @@ function readIndicatorParameters(value: unknown): IndicatorParameters {
   if (!isRecord(value)) {
     return defaultIndicatorParameters;
   }
-  return {
+  const parameters = {
     sma_period: readBoundedNumber(value.sma_period, 20),
     ema_period: readBoundedNumber(value.ema_period, 20),
     macd_fast_period: readBoundedNumber(value.macd_fast_period, 12),
@@ -807,6 +814,11 @@ function readIndicatorParameters(value: unknown): IndicatorParameters {
     bollinger_multiplier: String(readBoundedDecimal(value.bollinger_multiplier, 2, 0.1, 10)),
     adx_period: readBoundedNumber(value.adx_period, 14),
   };
+  if (parameters.macd_fast_period >= parameters.macd_slow_period) {
+    parameters.macd_fast_period = defaultIndicatorParameters.macd_fast_period;
+    parameters.macd_slow_period = defaultIndicatorParameters.macd_slow_period;
+  }
+  return parameters;
 }
 
 function readVisibleIndicators(value: unknown): Record<IndicatorKey, boolean> {
