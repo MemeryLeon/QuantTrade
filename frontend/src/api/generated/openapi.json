@@ -202,7 +202,11 @@
             "type": "array"
           },
           "resolution": {
-            "const": "daily",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly"
+            ],
             "title": "Resolution",
             "type": "string"
           },
@@ -350,47 +354,39 @@
       "IndicatorParametersResponse": {
         "properties": {
           "adx_period": {
-            "const": 14,
             "title": "Adx Period",
             "type": "integer"
           },
           "bollinger_multiplier": {
-            "const": 2,
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
             "title": "Bollinger Multiplier",
-            "type": "integer"
+            "type": "string"
           },
           "bollinger_period": {
-            "const": 20,
             "title": "Bollinger Period",
             "type": "integer"
           },
           "ema_period": {
-            "const": 20,
             "title": "Ema Period",
             "type": "integer"
           },
           "macd_fast_period": {
-            "const": 12,
             "title": "Macd Fast Period",
             "type": "integer"
           },
           "macd_signal_period": {
-            "const": 9,
             "title": "Macd Signal Period",
             "type": "integer"
           },
           "macd_slow_period": {
-            "const": 26,
             "title": "Macd Slow Period",
             "type": "integer"
           },
           "rsi_period": {
-            "const": 14,
             "title": "Rsi Period",
             "type": "integer"
           },
           "sma_period": {
-            "const": 20,
             "title": "Sma Period",
             "type": "integer"
           }
@@ -610,7 +606,11 @@
             "type": "array"
           },
           "resolution": {
-            "const": "daily",
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly"
+            ],
             "title": "Resolution",
             "type": "string"
           },
@@ -1318,8 +1318,12 @@
             "name": "resolution",
             "required": false,
             "schema": {
-              "const": "daily",
               "default": "daily",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ],
               "title": "Resolution",
               "type": "string"
             }
@@ -1513,8 +1517,12 @@
             "name": "resolution",
             "required": false,
             "schema": {
-              "const": "daily",
               "default": "daily",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ],
               "title": "Resolution",
               "type": "string"
             }
@@ -1532,6 +1540,122 @@
               ],
               "title": "Adjustment",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sma_period",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Sma Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ema_period",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Ema Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "macd_fast_period",
+            "required": false,
+            "schema": {
+              "default": 12,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Macd Fast Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "macd_slow_period",
+            "required": false,
+            "schema": {
+              "default": 26,
+              "maximum": 500,
+              "minimum": 3,
+              "title": "Macd Slow Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "macd_signal_period",
+            "required": false,
+            "schema": {
+              "default": 9,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Macd Signal Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rsi_period",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Rsi Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bollinger_period",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Bollinger Period",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bollinger_multiplier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "exclusiveMinimum": 0.0,
+                  "maximum": 10.0,
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                }
+              ],
+              "default": "2",
+              "title": "Bollinger Multiplier"
+            }
+          },
+          {
+            "in": "query",
+            "name": "adx_period",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "maximum": 250,
+              "minimum": 2,
+              "title": "Adx Period",
+              "type": "integer"
             }
           }
         ],

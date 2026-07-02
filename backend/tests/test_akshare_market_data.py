@@ -266,6 +266,15 @@ def test_market_indicators_api_returns_backend_computed_series() -> None:
                 "end": "2026-07-30T00:00:00Z",
                 "resolution": "daily",
                 "adjustment": "none",
+                "sma_period": 5,
+                "ema_period": 6,
+                "macd_fast_period": 3,
+                "macd_slow_period": 8,
+                "macd_signal_period": 4,
+                "rsi_period": 5,
+                "bollinger_period": 7,
+                "bollinger_multiplier": "2.5",
+                "adx_period": 5,
             },
         )
     finally:
@@ -275,7 +284,11 @@ def test_market_indicators_api_returns_backend_computed_series() -> None:
     payload = response.json()
     assert payload["provider"] == "akshare"
     assert payload["timezone"] == "Asia/Shanghai"
-    assert payload["parameters"]["sma_period"] == 20
+    assert payload["parameters"]["sma_period"] == 5
+    assert payload["parameters"]["ema_period"] == 6
+    assert payload["parameters"]["macd_fast_period"] == 3
+    assert payload["parameters"]["macd_slow_period"] == 8
+    assert payload["parameters"]["bollinger_multiplier"] == "2.5"
     assert len(payload["points"]) == 30
     assert payload["points"][0]["sma"] is None
     assert payload["points"][-1]["sma"] is not None

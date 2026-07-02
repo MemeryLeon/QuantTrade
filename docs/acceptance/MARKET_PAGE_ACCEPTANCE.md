@@ -9,7 +9,7 @@
 | 子任务 | 自动检查 | 自审结果 | 状态 |
 |---|---|---|---|
 | 行情数据正确性与状态 | `pytest backend/tests/test_akshare_market_data.py backend/tests/test_market_domain_contract.py` 通过 | 后端接口已支持日/周/月；周/月由日线按交易所时区聚合；延迟、来源、质量标记继续由服务端输出 | DONE |
-| 主图、周期、复权和指标 | 待运行 | 待填写 | TODO |
+| 主图、周期、复权和指标 | `pytest backend/tests/test_akshare_market_data.py backend/tests/test_market_snapshots_and_indicators.py`、`npm run build`、`npm run e2e -- --reporter=line tests/e2e/market.spec.ts` 通过 | 主图已切换 Lightweight Charts；周期和复权进入接口请求；指标参数由后端计算并在页面管理；图表支持十字光标、缩放、拖动、重置和全屏 | DONE |
 | 搜索、自选、详情和用户偏好 | 待运行 | 待填写 | TODO |
 | 视觉收口、性能和 E2E | 待运行 | 待填写 | TODO |
 

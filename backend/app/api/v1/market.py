@@ -22,6 +22,7 @@ from app.contracts.market import (
     TradingCalendarResponse,
 )
 from app.core.errors import ApiError
+from app.domains.indicators import IndicatorRequest
 from app.domains.market import BarsRequest
 
 
@@ -108,16 +109,36 @@ async def get_indicators(
     end: datetime,
     resolution: MarketResolution = "daily",
     adjustment: AdjustmentMode = "none",
+    sma_period: int = Query(default=20, ge=2, le=250),
+    ema_period: int = Query(default=20, ge=2, le=250),
+    macd_fast_period: int = Query(default=12, ge=2, le=250),
+    macd_slow_period: int = Query(default=26, ge=3, le=500),
+    macd_signal_period: int = Query(default=9, ge=2, le=250),
+    rsi_period: int = Query(default=14, ge=2, le=250),
+    bollinger_period: int = Query(default=20, ge=2, le=250),
+    bollinger_multiplier: Decimal = Query(default=Decimal("2"), gt=0, le=Decimal("10")),
+    adx_period: int = Query(default=14, ge=2, le=250),
     service: MarketDataApplicationService = Depends(get_market_data_service),
 ) -> IndicatorsResponse:
     try:
         result = await service.get_indicators(
-            BarsRequest(
-                instrument_id=instrument_id,
-                start=start,
-                end=end,
-                resolution=resolution,
-                adjustment=adjustment,
+            IndicatorRequest(
+                bars_request=BarsRequest(
+                    instrument_id=instrument_id,
+                    start=start,
+                    end=end,
+                    resolution=resolution,
+                    adjustment=adjustment,
+                ),
+                sma_period=sma_period,
+                ema_period=ema_period,
+                macd_fast_period=macd_fast_period,
+                macd_slow_period=macd_slow_period,
+                macd_signal_period=macd_signal_period,
+                rsi_period=rsi_period,
+                bollinger_period=bollinger_period,
+                bollinger_multiplier=bollinger_multiplier,
+                adx_period=adx_period,
             )
         )
     except ValueError as exc:
@@ -136,15 +157,15 @@ async def get_indicators(
         adjustment=adjustment,
         timezone="Asia/Shanghai",
         parameters=IndicatorParametersResponse(
-            sma_period=20,
-            ema_period=20,
-            macd_fast_period=12,
-            macd_slow_period=26,
-            macd_signal_period=9,
-            rsi_period=14,
-            bollinger_period=20,
-            bollinger_multiplier=2,
-            adx_period=14,
+            sma_period=sma_period,
+            ema_period=ema_period,
+            macd_fast_period=macd_fast_period,
+            macd_slow_period=macd_slow_period,
+            macd_signal_period=macd_signal_period,
+            rsi_period=rsi_period,
+            bollinger_period=bollinger_period,
+            bollinger_multiplier=bollinger_multiplier,
+            adx_period=adx_period,
         ),
         points=tuple(
             IndicatorPointResponse(

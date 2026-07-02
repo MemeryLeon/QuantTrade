@@ -276,9 +276,9 @@ export interface components {
             quality_flags: components["schemas"]["QualityFlag"][];
             /**
              * Resolution
-             * @constant
+             * @enum {string}
              */
-            resolution: "daily";
+            resolution: "daily" | "weekly" | "monthly";
             /** Stale Age Seconds */
             stale_age_seconds: number | null;
             /**
@@ -325,51 +325,24 @@ export interface components {
         };
         /** IndicatorParametersResponse */
         IndicatorParametersResponse: {
-            /**
-             * Adx Period
-             * @constant
-             */
-            adx_period: 14;
-            /**
-             * Bollinger Multiplier
-             * @constant
-             */
-            bollinger_multiplier: 2;
-            /**
-             * Bollinger Period
-             * @constant
-             */
-            bollinger_period: 20;
-            /**
-             * Ema Period
-             * @constant
-             */
-            ema_period: 20;
-            /**
-             * Macd Fast Period
-             * @constant
-             */
-            macd_fast_period: 12;
-            /**
-             * Macd Signal Period
-             * @constant
-             */
-            macd_signal_period: 9;
-            /**
-             * Macd Slow Period
-             * @constant
-             */
-            macd_slow_period: 26;
-            /**
-             * Rsi Period
-             * @constant
-             */
-            rsi_period: 14;
-            /**
-             * Sma Period
-             * @constant
-             */
-            sma_period: 20;
+            /** Adx Period */
+            adx_period: number;
+            /** Bollinger Multiplier */
+            bollinger_multiplier: string;
+            /** Bollinger Period */
+            bollinger_period: number;
+            /** Ema Period */
+            ema_period: number;
+            /** Macd Fast Period */
+            macd_fast_period: number;
+            /** Macd Signal Period */
+            macd_signal_period: number;
+            /** Macd Slow Period */
+            macd_slow_period: number;
+            /** Rsi Period */
+            rsi_period: number;
+            /** Sma Period */
+            sma_period: number;
         };
         /** IndicatorPointResponse */
         IndicatorPointResponse: {
@@ -437,9 +410,9 @@ export interface components {
             quality_flags: components["schemas"]["QualityFlag"][];
             /**
              * Resolution
-             * @constant
+             * @enum {string}
              */
-            resolution: "daily";
+            resolution: "daily" | "weekly" | "monthly";
             /** Stale Age Seconds */
             stale_age_seconds: number | null;
             /**
@@ -797,7 +770,7 @@ export interface operations {
                 instrument_id: string;
                 start: string;
                 end: string;
-                resolution?: "daily";
+                resolution?: "daily" | "weekly" | "monthly";
                 adjustment?: "none" | "qfq" | "hfq";
             };
             header?: never;
@@ -896,8 +869,17 @@ export interface operations {
                 instrument_id: string;
                 start: string;
                 end: string;
-                resolution?: "daily";
+                resolution?: "daily" | "weekly" | "monthly";
                 adjustment?: "none" | "qfq" | "hfq";
+                sma_period?: number;
+                ema_period?: number;
+                macd_fast_period?: number;
+                macd_slow_period?: number;
+                macd_signal_period?: number;
+                rsi_period?: number;
+                bollinger_period?: number;
+                bollinger_multiplier?: number | string;
+                adx_period?: number;
             };
             header?: never;
             path?: never;

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
+import { MarketChart, type IndicatorKey } from "../components/MarketChart";
 import {
   getBars,
   getDataSourceHealth,
@@ -9,8 +10,10 @@ import {
   type Adjustment,
   type Bars,
   type DataSourceHealth,
+  type IndicatorParameters,
   type Indicators,
   type Instrument,
+  type MarketResolution,
 } from "../services/market";
 import { useWatchlistStore } from "../stores/watchlistStore";
 
@@ -31,13 +34,48 @@ const adjustmentLabels: Record<Adjustment, string> = {
   hfq: "后复权",
 };
 
+const resolutionLabels: Record<MarketResolution, string> = {
+  daily: "日线",
+  weekly: "周线",
+  monthly: "月线",
+};
+
+const defaultIndicatorParameters: IndicatorParameters = {
+  sma_period: 20,
+  ema_period: 20,
+  macd_fast_period: 12,
+  macd_slow_period: 26,
+  macd_signal_period: 9,
+  rsi_period: 14,
+  bollinger_period: 20,
+  bollinger_multiplier: "2",
+  adx_period: 14,
+};
+
+const defaultVisibleIndicators: Record<IndicatorKey, boolean> = {
+  sma: true,
+  ema: true,
+  bollinger: true,
+  macd: true,
+  rsi: false,
+  adx: false,
+};
+
 export function MarketPage() {
   const [query, setQuery] = useState("平安");
   const [submittedQuery, setSubmittedQuery] = useState("平安");
   const [selectedInstrument, setSelectedInstrument] = useState<Instrument>(defaultInstrument);
   const [startDate, setStartDate] = useState(() => daysBeforeInputDate(180));
   const [endDate, setEndDate] = useState(() => inputDate(new Date()));
+  const [resolution, setResolution] = useState<MarketResolution>("daily");
   const [adjustment, setAdjustment] = useState<Adjustment>("qfq");
+  const [indicatorParameters, setIndicatorParameters] = useState<IndicatorParameters>(
+    defaultIndicatorParameters,
+  );
+  const [visibleIndicators, setVisibleIndicators] =
+    useState<Record<IndicatorKey, boolean>>(defaultVisibleIndicators);
+  const [chartResetSignal, setChartResetSignal] = useState(0);
+  const [chartFullscreen, setChartFullscreen] = useState(false);
   const [exportText, setExportText] = useState("");
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
@@ -58,23 +96,34 @@ export function MarketPage() {
     enabled: submittedQuery.trim().length > 0,
   });
   const barsQuery = useQuery({
-    queryKey: ["market-bars", selectedInstrument.instrument_id, startDate, endDate, adjustment],
+    queryKey: ["market-bars", selectedInstrument.instrument_id, startDate, endDate, resolution, adjustment],
     queryFn: () =>
       getBars({
         instrumentId: selectedInstrument.instrument_id,
         start: toApiDateTime(startDate),
         end: toApiDateTime(endDate),
+        resolution,
         adjustment,
       }),
   });
   const indicatorsQuery = useQuery({
-    queryKey: ["market-indicators", selectedInstrument.instrument_id, startDate, endDate, adjustment],
+    queryKey: [
+      "market-indicators",
+      selectedInstrument.instrument_id,
+      startDate,
+      endDate,
+      resolution,
+      adjustment,
+      indicatorParameters,
+    ],
     queryFn: () =>
       getIndicators({
         instrumentId: selectedInstrument.instrument_id,
         start: toApiDateTime(startDate),
         end: toApiDateTime(endDate),
+        resolution,
         adjustment,
+        parameters: indicatorParameters,
       }),
   });
 
@@ -117,6 +166,17 @@ export function MarketPage() {
     }
   }
 
+  function updateIndicatorPeriod(key: keyof IndicatorParameters, value: string) {
+    setIndicatorParameters((current) => ({
+      ...current,
+      [key]: key === "bollinger_multiplier" ? value : Number(value),
+    }));
+  }
+
+  function toggleIndicator(key: IndicatorKey) {
+    setVisibleIndicators((current) => ({ ...current, [key]: !current[key] }));
+  }
+
   return (
     <main className="workspace market-workspace">
       {warningText ? (
@@ -145,6 +205,18 @@ export function MarketPage() {
       </section>
 
       <section className="market-controls" aria-label="行情控制">
+        <div className="segmented-control" role="group" aria-label="周期">
+          {(Object.keys(resolutionLabels) as MarketResolution[]).map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={resolution === item ? "selected" : ""}
+              onClick={() => setResolution(item)}
+            >
+              {resolutionLabels[item]}
+            </button>
+          ))}
+        </div>
         <label>
           <span>开始日期</span>
           <input
@@ -191,14 +263,34 @@ export function MarketPage() {
         <section className="market-chart-panel" aria-labelledby="chart-title">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">日线</p>
+              <p className="eyebrow">{resolutionLabels[resolution]}</p>
               <h3 id="chart-title">K 线与成交量</h3>
             </div>
-            <strong>{barsQuery.data ? `${barsQuery.data.bars.length} 根` : "加载中"}</strong>
+            <div className="actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => setChartResetSignal((value) => value + 1)}
+              >
+                重置视图
+              </button>
+              <button type="button" onClick={() => setChartFullscreen((value) => !value)}>
+                {chartFullscreen ? "退出全屏" : "全屏"}
+              </button>
+            </div>
           </div>
           {barsQuery.data ? (
-            <CandlestickChart bars={barsQuery.data.bars} indicators={indicatorsQuery.data?.points} />
+            <MarketChart
+              bars={barsQuery.data.bars}
+              indicators={indicatorsQuery.data?.points}
+              visibleIndicators={visibleIndicators}
+              resetSignal={chartResetSignal}
+              isFullscreen={chartFullscreen}
+            />
           ) : null}
+          <p className="chart-footnote">
+            {barsQuery.data ? `${barsQuery.data.bars.length} 根` : "加载中"} · 支持十字光标、缩放、拖动
+          </p>
           {barsQuery.error ? <p className="error-text">{barsQuery.error.message}</p> : null}
         </section>
 
@@ -206,6 +298,7 @@ export function MarketPage() {
           <InfoItem label="数据源" value={barsQuery.data?.provider ?? "akshare"} />
           <InfoItem label="市场" value={barsQuery.data?.market ?? selectedInstrument.market} />
           <InfoItem label="时区" value={barsQuery.data?.timezone ?? selectedInstrument.exchange_timezone} />
+          <InfoItem label="周期" value={resolutionLabels[barsQuery.data?.resolution ?? resolution]} />
           <InfoItem label="复权" value={adjustmentLabels[adjustment]} />
           <InfoItem label="as_of" value={formatDateTime(barsQuery.data?.as_of)} />
           <InfoItem label="质量标记" value={formatFlags(barsQuery.data?.quality_flags)} />
@@ -223,7 +316,15 @@ export function MarketPage() {
         {indicatorsQuery.error ? (
           <p className="error-text">{indicatorsQuery.error.message}</p>
         ) : (
-          <IndicatorGrid point={latestIndicator} parameters={indicatorsQuery.data?.parameters} />
+          <>
+            <IndicatorManager
+              parameters={indicatorParameters}
+              visibleIndicators={visibleIndicators}
+              onParameterChange={updateIndicatorPeriod}
+              onToggle={toggleIndicator}
+            />
+            <IndicatorGrid point={latestIndicator} parameters={indicatorsQuery.data?.parameters} />
+          </>
         )}
       </section>
 
@@ -297,6 +398,139 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   );
 }
 
+function IndicatorManager({
+  parameters,
+  visibleIndicators,
+  onParameterChange,
+  onToggle,
+}: {
+  parameters: IndicatorParameters;
+  visibleIndicators: Record<IndicatorKey, boolean>;
+  onParameterChange: (key: keyof IndicatorParameters, value: string) => void;
+  onToggle: (key: IndicatorKey) => void;
+}) {
+  return (
+    <div className="indicator-manager" aria-label="指标管理">
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.sma}
+          onChange={() => onToggle("sma")}
+        />
+        <span>SMA</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.sma_period}
+          onChange={(event) => onParameterChange("sma_period", event.target.value)}
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.ema}
+          onChange={() => onToggle("ema")}
+        />
+        <span>EMA</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.ema_period}
+          onChange={(event) => onParameterChange("ema_period", event.target.value)}
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.macd}
+          onChange={() => onToggle("macd")}
+        />
+        <span>MACD</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.macd_fast_period}
+          onChange={(event) => onParameterChange("macd_fast_period", event.target.value)}
+          aria-label="MACD 快线"
+        />
+        <input
+          type="number"
+          min={3}
+          max={500}
+          value={parameters.macd_slow_period}
+          onChange={(event) => onParameterChange("macd_slow_period", event.target.value)}
+          aria-label="MACD 慢线"
+        />
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.macd_signal_period}
+          onChange={(event) => onParameterChange("macd_signal_period", event.target.value)}
+          aria-label="MACD 信号线"
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.rsi}
+          onChange={() => onToggle("rsi")}
+        />
+        <span>RSI</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.rsi_period}
+          onChange={(event) => onParameterChange("rsi_period", event.target.value)}
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.bollinger}
+          onChange={() => onToggle("bollinger")}
+        />
+        <span>布林</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.bollinger_period}
+          onChange={(event) => onParameterChange("bollinger_period", event.target.value)}
+        />
+        <input
+          type="number"
+          min={0.1}
+          max={10}
+          step={0.1}
+          value={parameters.bollinger_multiplier}
+          onChange={(event) => onParameterChange("bollinger_multiplier", event.target.value)}
+          aria-label="布林倍数"
+        />
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={visibleIndicators.adx}
+          onChange={() => onToggle("adx")}
+        />
+        <span>ADX</span>
+        <input
+          type="number"
+          min={2}
+          max={250}
+          value={parameters.adx_period}
+          onChange={(event) => onParameterChange("adx_period", event.target.value)}
+        />
+      </label>
+    </div>
+  );
+}
+
 function IndicatorGrid({
   point,
   parameters,
@@ -335,129 +569,6 @@ function IndicatorGrid({
       <InfoItem label={labels.adx} value={formatNumber(point?.adx)} />
     </div>
   );
-}
-
-function CandlestickChart({
-  bars,
-  indicators,
-}: {
-  bars: Bar[];
-  indicators: IndicatorPoint[] | undefined;
-}) {
-  const geometry = useMemo(() => chartGeometry(bars, indicators), [bars, indicators]);
-  if (bars.length === 0 || !geometry) {
-    return <p className="empty-state">暂无 K 线数据</p>;
-  }
-
-  return (
-    <svg className="market-chart" viewBox="0 0 920 420" role="img" aria-label="K 线图">
-      <rect x="0" y="0" width="920" height="420" rx="0" />
-      <g className="chart-grid">
-        {[0, 1, 2, 3].map((line) => (
-          <line key={line} x1="48" x2="896" y1={42 + line * 72} y2={42 + line * 72} />
-        ))}
-      </g>
-      <g className="volume-bars">
-        {bars.map((bar, index) => {
-          const x = geometry.x(index);
-          const height = geometry.volumeHeight(bar.volume);
-          return (
-            <rect
-              key={`volume-${bar.observed_at}`}
-              x={x - geometry.candleWidth / 2}
-              y={370 - height}
-              width={geometry.candleWidth}
-              height={height}
-            />
-          );
-        })}
-      </g>
-      <g className="candles">
-        {bars.map((bar, index) => {
-          const x = geometry.x(index);
-          const open = Number(bar.open_price);
-          const close = Number(bar.close_price);
-          const high = Number(bar.high_price);
-          const low = Number(bar.low_price);
-          const yOpen = geometry.y(open);
-          const yClose = geometry.y(close);
-          const colorClass = close >= open ? "up" : "down";
-          return (
-            <g key={bar.observed_at} className={colorClass}>
-              <line x1={x} x2={x} y1={geometry.y(high)} y2={geometry.y(low)} />
-              <rect
-                x={x - geometry.candleWidth / 2}
-                y={Math.min(yOpen, yClose)}
-                width={geometry.candleWidth}
-                height={Math.max(2, Math.abs(yClose - yOpen))}
-              />
-            </g>
-          );
-        })}
-      </g>
-      {geometry.smaPath ? <path className="indicator-line sma-line" d={geometry.smaPath} /> : null}
-      {geometry.emaPath ? <path className="indicator-line ema-line" d={geometry.emaPath} /> : null}
-      {geometry.bollingerUpperPath ? (
-        <path className="indicator-line bollinger-line" d={geometry.bollingerUpperPath} />
-      ) : null}
-      {geometry.bollingerLowerPath ? (
-        <path className="indicator-line bollinger-line" d={geometry.bollingerLowerPath} />
-      ) : null}
-      <text x="48" y="400">
-        {new Date(bars[0].observed_at).toLocaleDateString()} -{" "}
-        {new Date(bars[bars.length - 1].observed_at).toLocaleDateString()}
-      </text>
-    </svg>
-  );
-}
-
-function chartGeometry(bars: Bar[], indicators: IndicatorPoint[] | undefined) {
-  if (bars.length === 0) {
-    return null;
-  }
-  const indicatorValues = (indicators ?? []).flatMap((point) =>
-    [
-      point.sma,
-      point.ema,
-      point.bollinger_upper,
-      point.bollinger_lower,
-      point.bollinger_middle,
-    ]
-      .filter((value): value is string => value !== null)
-      .map(Number),
-  );
-  const prices = bars.flatMap((bar) => [
-    Number(bar.high_price),
-    Number(bar.low_price),
-    Number(bar.open_price),
-    Number(bar.close_price),
-  ]);
-  const min = Math.min(...prices, ...indicatorValues);
-  const max = Math.max(...prices, ...indicatorValues);
-  const range = max === min ? 1 : max - min;
-  const maxVolume = Math.max(...bars.map((bar) => bar.volume), 1);
-  const step = bars.length > 1 ? 848 / (bars.length - 1) : 16;
-  const candleWidth = Math.max(4, Math.min(14, step * 0.58));
-  const x = (index: number) => 48 + index * step;
-  const y = (value: number) => 292 - ((value - min) / range) * 250;
-  const linePath = (key: keyof IndicatorPoint) => {
-    const segments = (indicators ?? [])
-      .map((point, index) => ({ value: point[key], index }))
-      .filter((entry): entry is { value: string; index: number } => entry.value !== null)
-      .map((entry, pathIndex) => `${pathIndex === 0 ? "M" : "L"}${x(entry.index)},${y(Number(entry.value))}`);
-    return segments.length > 0 ? segments.join(" ") : null;
-  };
-
-  return {
-    candleWidth,
-    x,
-    y,
-    volumeHeight: (volume: number) => Math.max(2, (volume / maxVolume) * 76),
-    smaPath: linePath("sma"),
-    emaPath: linePath("ema"),
-    bollingerUpperPath: linePath("bollinger_upper"),
-    bollingerLowerPath: linePath("bollinger_lower"),
-  };
 }
 
 function warningMessage(

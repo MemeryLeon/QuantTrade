@@ -22,6 +22,27 @@ test("loads market data and switches instrument", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /浦发银行/ })).toBeVisible();
 });
 
+test("switches resolution, adjustment and indicator parameters", async ({ page }) => {
+  const indicatorUrls: string[] = [];
+  const barUrls: string[] = [];
+  await mockHealthyMarket(page, {
+    onBarsRequest: (url) => barUrls.push(url),
+    onIndicatorsRequest: (url) => indicatorUrls.push(url),
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "周线" }).click();
+  await page.getByLabel("复权").selectOption("hfq");
+  await page.getByLabel("指标管理").getByLabel("MACD 快线").fill("5");
+  await page.getByLabel("指标管理").getByText("ADX").click();
+
+  await expect.poll(() => barUrls.some((url) => url.includes("resolution=weekly"))).toBeTruthy();
+  await expect.poll(() => barUrls.some((url) => url.includes("adjustment=hfq"))).toBeTruthy();
+  await expect
+    .poll(() => indicatorUrls.some((url) => url.includes("macd_fast_period=5")))
+    .toBeTruthy();
+});
+
 test("shows global warning when data source degrades", async ({ page }) => {
   await mockHealthyMarket(page, {
     healthStatus: "degraded",
@@ -81,7 +102,12 @@ test("persists watchlist and rejects invalid import json", async ({ page }) => {
 
 async function mockHealthyMarket(
   page: Page,
-  options: { healthStatus?: "healthy" | "degraded"; delayed?: boolean } = {},
+  options: {
+    healthStatus?: "healthy" | "degraded";
+    delayed?: boolean;
+    onBarsRequest?: (url: string) => void;
+    onIndicatorsRequest?: (url: string) => void;
+  } = {},
 ) {
   const healthStatus = options.healthStatus ?? "healthy";
   const delayed = options.delayed ?? false;
@@ -92,9 +118,11 @@ async function mockHealthyMarket(
     await route.fulfill({ json: searchPayload() });
   });
   await page.route("**/market/bars**", async (route) => {
+    options.onBarsRequest?.(route.request().url());
     await route.fulfill({ json: barsPayload(delayed) });
   });
   await page.route("**/market/indicators**", async (route) => {
+    options.onIndicatorsRequest?.(route.request().url());
     await route.fulfill({ json: indicatorsPayload(delayed) });
   });
 }

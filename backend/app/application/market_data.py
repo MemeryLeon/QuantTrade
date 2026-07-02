@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal
 
 from app.domains.indicators import (
     IndicatorPoint,
+    IndicatorRequest,
     IndicatorResult,
     adx,
     bollinger_bands,
@@ -36,18 +36,27 @@ class MarketDataApplicationService:
     async def get_bars(self, request: BarsRequest) -> BarsResult:
         return await self._provider.get_bars(request)
 
-    async def get_indicators(self, request: BarsRequest) -> IndicatorResult:
-        bars_result = await self._provider.get_bars(request)
+    async def get_indicators(self, request: IndicatorRequest) -> IndicatorResult:
+        bars_result = await self._provider.get_bars(request.bars_request)
         bars = bars_result.bars
         closes = tuple(bar.close_price for bar in bars)
         highs = tuple(bar.high_price for bar in bars)
         lows = tuple(bar.low_price for bar in bars)
-        sma_values = sma(closes, 20)
-        ema_values = ema(closes, 20)
-        macd_result = macd(closes)
-        rsi_values = rsi(closes)
-        bands = bollinger_bands(closes, multiplier=Decimal("2"))
-        adx_values = adx(highs, lows, closes)
+        sma_values = sma(closes, request.sma_period)
+        ema_values = ema(closes, request.ema_period)
+        macd_result = macd(
+            closes,
+            fast_period=request.macd_fast_period,
+            slow_period=request.macd_slow_period,
+            signal_period=request.macd_signal_period,
+        )
+        rsi_values = rsi(closes, request.rsi_period)
+        bands = bollinger_bands(
+            closes,
+            period=request.bollinger_period,
+            multiplier=request.bollinger_multiplier,
+        )
+        adx_values = adx(highs, lows, closes, request.adx_period)
 
         points = tuple(
             IndicatorPoint(

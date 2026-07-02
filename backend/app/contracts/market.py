@@ -77,15 +77,15 @@ class IndicatorPointResponse(BaseModel):
 class IndicatorParametersResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    sma_period: Literal[20]
-    ema_period: Literal[20]
-    macd_fast_period: Literal[12]
-    macd_slow_period: Literal[26]
-    macd_signal_period: Literal[9]
-    rsi_period: Literal[14]
-    bollinger_period: Literal[20]
-    bollinger_multiplier: Literal[2]
-    adx_period: Literal[14]
+    sma_period: int
+    ema_period: int
+    macd_fast_period: int
+    macd_slow_period: int
+    macd_signal_period: int
+    rsi_period: int
+    bollinger_period: int
+    bollinger_multiplier: Decimal
+    adx_period: int
 
 
 class IndicatorsResponse(BaseModel):

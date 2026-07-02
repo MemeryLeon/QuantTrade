@@ -6,6 +6,8 @@ export type Bars = components["schemas"]["BarsResponse"];
 export type Indicators = components["schemas"]["IndicatorsResponse"];
 export type DataSourceHealth = components["schemas"]["DataSourceHealthResponse"];
 export type Adjustment = Bars["adjustment"];
+export type MarketResolution = Bars["resolution"];
+export type IndicatorParameters = Indicators["parameters"];
 
 type ApiErrorBody = {
   code?: string;
@@ -34,6 +36,7 @@ export async function getBars(params: {
   instrumentId: string;
   start: string;
   end: string;
+  resolution: MarketResolution;
   adjustment: Adjustment;
 }): Promise<Bars> {
   const { data, error } = await apiClient.GET("/market/bars", {
@@ -42,7 +45,7 @@ export async function getBars(params: {
         instrument_id: params.instrumentId,
         start: params.start,
         end: params.end,
-        resolution: "daily",
+        resolution: params.resolution,
         adjustment: params.adjustment,
       },
     },
@@ -57,7 +60,9 @@ export async function getIndicators(params: {
   instrumentId: string;
   start: string;
   end: string;
+  resolution: MarketResolution;
   adjustment: Adjustment;
+  parameters: IndicatorParameters;
 }): Promise<Indicators> {
   const { data, error } = await apiClient.GET("/market/indicators", {
     params: {
@@ -65,8 +70,17 @@ export async function getIndicators(params: {
         instrument_id: params.instrumentId,
         start: params.start,
         end: params.end,
-        resolution: "daily",
+        resolution: params.resolution,
         adjustment: params.adjustment,
+        sma_period: params.parameters.sma_period,
+        ema_period: params.parameters.ema_period,
+        macd_fast_period: params.parameters.macd_fast_period,
+        macd_slow_period: params.parameters.macd_slow_period,
+        macd_signal_period: params.parameters.macd_signal_period,
+        rsi_period: params.parameters.rsi_period,
+        bollinger_period: params.parameters.bollinger_period,
+        bollinger_multiplier: params.parameters.bollinger_multiplier,
+        adx_period: params.parameters.adx_period,
       },
     },
   });

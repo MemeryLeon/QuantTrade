@@ -261,6 +261,27 @@ textarea {
   width: min(210px, 100%);
 }
 
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(64px, 1fr));
+  border: 1px solid #c6ced8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.segmented-control button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #26384d;
+}
+
+.segmented-control button.selected {
+  background: #1d4f91;
+  color: #ffffff;
+}
+
 .instrument-list {
   display: flex;
   flex-wrap: wrap;
@@ -310,65 +331,31 @@ textarea {
   margin-bottom: 12px;
 }
 
-.market-chart {
-  display: block;
+.market-chart-frame {
+  height: 460px;
+  min-height: 460px;
+  border: 1px solid #223041;
+  background: #0b1117;
+}
+
+.market-chart-canvas {
   width: 100%;
-  min-height: 320px;
-  border: 1px solid #e2e8f0;
-  background: #fbfcfd;
+  height: 100%;
 }
 
-.market-chart > rect {
-  fill: #fbfcfd;
+.fullscreen-chart {
+  position: fixed;
+  inset: 18px;
+  z-index: 50;
+  height: auto;
+  min-height: 0;
+  border-color: #38506b;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 38%);
 }
 
-.chart-grid line {
-  stroke: #e2e8f0;
-  stroke-width: 1;
-}
-
-.volume-bars rect {
-  fill: #d5dde7;
-}
-
-.candles line,
-.candles rect {
-  stroke-width: 1.5;
-}
-
-.candles .up line,
-.candles .up rect {
-  fill: #e8f6ef;
-  stroke: #15803d;
-}
-
-.candles .down line,
-.candles .down rect {
-  fill: #fff1f2;
-  stroke: #be123c;
-}
-
-.indicator-line {
-  fill: none;
-  stroke-width: 2;
-}
-
-.sma-line {
-  stroke: #1d4ed8;
-}
-
-.ema-line {
-  stroke: #7c3aed;
-}
-
-.bollinger-line {
-  stroke: #d97706;
-  stroke-dasharray: 5 5;
-}
-
-.market-chart text {
-  fill: #647184;
-  font-size: 13px;
+.chart-footnote {
+  color: #647184;
+  margin: 10px 0 0;
 }
 
 .market-side,
@@ -388,6 +375,46 @@ textarea {
 .indicator-panel,
 .watchlist-panel {
   margin-top: 16px;
+}
+
+.indicator-manager {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.indicator-manager label {
+  display: grid;
+  grid-template-columns: 22px minmax(42px, 1fr) minmax(58px, 76px);
+  gap: 8px;
+  align-items: center;
+  border: 1px solid #edf0f4;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.indicator-manager label:has(input[aria-label]) {
+  grid-template-columns: 22px minmax(48px, 1fr) repeat(3, minmax(48px, 64px));
+}
+
+.indicator-manager label:nth-child(5) {
+  grid-template-columns: 22px minmax(48px, 1fr) repeat(2, minmax(48px, 72px));
+}
+
+.indicator-manager input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.indicator-manager input[type="number"] {
+  min-height: 32px;
+  padding: 0 7px;
+}
+
+.indicator-manager span {
+  margin: 0;
 }
 
 .indicator-grid {
@@ -461,7 +488,8 @@ textarea {
   .market-search,
   .market-grid,
   .watchlist-items > div,
-  .import-row {
+  .import-row,
+  .segmented-control {
     grid-template-columns: 1fr;
   }
 
