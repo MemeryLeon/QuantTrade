@@ -97,6 +97,230 @@
         "title": "BacktestSubmissionResponse",
         "type": "object"
       },
+      "BarResponse": {
+        "properties": {
+          "close_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Close Price",
+            "type": "string"
+          },
+          "high_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "High Price",
+            "type": "string"
+          },
+          "low_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Low Price",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "open_price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Open Price",
+            "type": "string"
+          },
+          "quality_flags": {
+            "items": {
+              "$ref": "#/components/schemas/QualityFlag"
+            },
+            "title": "Quality Flags",
+            "type": "array"
+          },
+          "volume": {
+            "title": "Volume",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observed_at",
+          "open_price",
+          "high_price",
+          "low_price",
+          "close_price",
+          "volume",
+          "quality_flags"
+        ],
+        "title": "BarResponse",
+        "type": "object"
+      },
+      "BarsResponse": {
+        "properties": {
+          "adjustment": {
+            "enum": [
+              "none",
+              "qfq",
+              "hfq"
+            ],
+            "title": "Adjustment",
+            "type": "string"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "bars": {
+            "items": {
+              "$ref": "#/components/schemas/BarResponse"
+            },
+            "title": "Bars",
+            "type": "array"
+          },
+          "currency": {
+            "const": "CNY",
+            "title": "Currency",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "is_delayed": {
+            "title": "Is Delayed",
+            "type": "boolean"
+          },
+          "market": {
+            "const": "CN_A",
+            "title": "Market",
+            "type": "string"
+          },
+          "provider": {
+            "const": "akshare",
+            "title": "Provider",
+            "type": "string"
+          },
+          "quality_flags": {
+            "items": {
+              "$ref": "#/components/schemas/QualityFlag"
+            },
+            "title": "Quality Flags",
+            "type": "array"
+          },
+          "resolution": {
+            "const": "daily",
+            "title": "Resolution",
+            "type": "string"
+          },
+          "stale_age_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Age Seconds"
+          },
+          "timezone": {
+            "const": "Asia/Shanghai",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "provider",
+          "market",
+          "currency",
+          "resolution",
+          "adjustment",
+          "timezone",
+          "bars",
+          "as_of",
+          "is_delayed",
+          "stale_age_seconds",
+          "quality_flags"
+        ],
+        "title": "BarsResponse",
+        "type": "object"
+      },
+      "DataSourceHealthResponse": {
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "consecutive_failures": {
+            "minimum": 0.0,
+            "title": "Consecutive Failures",
+            "type": "integer"
+          },
+          "last_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error Code"
+          },
+          "last_success_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success At"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "stale_age_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Age Seconds"
+          },
+          "stale_cache_available": {
+            "title": "Stale Cache Available",
+            "type": "boolean"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DataSourceStatus"
+          }
+        },
+        "required": [
+          "provider",
+          "status",
+          "checked_at",
+          "consecutive_failures",
+          "last_success_at",
+          "last_error_code",
+          "stale_cache_available",
+          "stale_age_seconds"
+        ],
+        "title": "DataSourceHealthResponse",
+        "type": "object"
+      },
+      "DataSourceStatus": {
+        "enum": [
+          "healthy",
+          "degraded",
+          "unavailable",
+          "recovering"
+        ],
+        "title": "DataSourceStatus",
+        "type": "string"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -121,6 +345,55 @@
           "status"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "InstrumentResponse": {
+        "properties": {
+          "exchange_timezone": {
+            "title": "Exchange Timezone",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "market": {
+            "title": "Market",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "symbol",
+          "name",
+          "market",
+          "exchange_timezone"
+        ],
+        "title": "InstrumentResponse",
+        "type": "object"
+      },
+      "InstrumentSearchResponse": {
+        "properties": {
+          "instruments": {
+            "items": {
+              "$ref": "#/components/schemas/InstrumentResponse"
+            },
+            "title": "Instruments",
+            "type": "array"
+          }
+        },
+        "required": [
+          "instruments"
+        ],
+        "title": "InstrumentSearchResponse",
         "type": "object"
       },
       "JobLogEntryResponse": {
@@ -378,6 +651,53 @@
           "trade_count"
         ],
         "title": "MockBacktestResultResponse",
+        "type": "object"
+      },
+      "QualityFlag": {
+        "enum": [
+          "MISSING_BARS",
+          "DUPLICATE_BARS",
+          "OUT_OF_ORDER",
+          "STALE_CACHE",
+          "PROVIDER_DEGRADED",
+          "PROVIDER_UNAVAILABLE",
+          "ADJUSTMENT_FACTOR_MISSING",
+          "CALENDAR_MISMATCH",
+          "TIMEZONE_AMBIGUOUS"
+        ],
+        "title": "QualityFlag",
+        "type": "string"
+      },
+      "TradingCalendarResponse": {
+        "properties": {
+          "market": {
+            "title": "Market",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "trading_days": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Trading Days",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market",
+          "version",
+          "timezone",
+          "trading_days"
+        ],
+        "title": "TradingCalendarResponse",
         "type": "object"
       },
       "ValidationError": {
@@ -655,6 +975,244 @@
         "summary": "Get Job Logs",
         "tags": [
           "backtests"
+        ]
+      }
+    },
+    "/market/bars": {
+      "get": {
+        "operationId": "get_bars_market_bars_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolution",
+            "required": false,
+            "schema": {
+              "const": "daily",
+              "default": "daily",
+              "title": "Resolution",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "default": "none",
+              "enum": [
+                "none",
+                "qfq",
+                "hfq"
+              ],
+              "title": "Adjustment",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BarsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Bars",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/market/calendar": {
+      "get": {
+        "operationId": "get_calendar_market_calendar_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "const": "CN_A",
+              "default": "CN_A",
+              "title": "Market",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "End",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradingCalendarResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Calendar",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/market/data-sources/{provider}/health": {
+      "get": {
+        "operationId": "get_data_source_health_market_data_sources__provider__health_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "const": "akshare",
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataSourceHealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Data Source Health",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/market/instruments/search": {
+      "get": {
+        "operationId": "search_instruments_market_instruments_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Query",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstrumentSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Instruments",
+        "tags": [
+          "market"
         ]
       }
     }

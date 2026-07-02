@@ -7,7 +7,7 @@ from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 
 
-def test_alembic_upgrade_and_downgrade_job_runs(tmp_path: Path) -> None:
+def test_alembic_upgrade_and_downgrade_core_tables(tmp_path: Path) -> None:
     backend_root = Path(__file__).resolve().parents[1]
     database_path = tmp_path / "migration.db"
     url = f"sqlite:///{database_path.as_posix()}"
@@ -21,10 +21,12 @@ def test_alembic_upgrade_and_downgrade_job_runs(tmp_path: Path) -> None:
     try:
         inspector = inspect(engine)
         assert "job_runs" in inspector.get_table_names()
+        assert "data_snapshots" in inspector.get_table_names()
 
         command.downgrade(config, "base")
 
         inspector = inspect(engine)
         assert "job_runs" not in inspector.get_table_names()
+        assert "data_snapshots" not in inspector.get_table_names()
     finally:
         engine.dispose()

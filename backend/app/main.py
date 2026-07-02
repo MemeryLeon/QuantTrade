@@ -6,12 +6,14 @@ from fastapi.responses import JSONResponse
 from app.api.v1.router import api_router
 from app.application.backtests import BacktestApplicationService
 from app.application.jobs import InMemoryJobRepository, JobService
+from app.application.market_data import MarketDataApplicationService
 from app.contracts.system import ApiErrorResponse
 from app.core.config import get_settings
 from app.core.errors import ApiError
 from app.core.logging import configure_logging
 from app.core.middleware import trace_id_middleware
 from app.core.trace import get_trace_id
+from app.infrastructure.akshare_market_data import AkshareDataProvider
 from app.infrastructure.mock_backtest import MockBacktestEngine
 
 
@@ -24,6 +26,11 @@ job_service = JobService(job_repository)
 app.state.backtest_service = BacktestApplicationService(
     engine=MockBacktestEngine(job_service),
     job_service=job_service,
+)
+market_data_provider = AkshareDataProvider.from_settings()
+app.state.market_data_service = MarketDataApplicationService(
+    provider=market_data_provider,
+    health=market_data_provider,
 )
 app.middleware("http")(trace_id_middleware)
 app.include_router(api_router)

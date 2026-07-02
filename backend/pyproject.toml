@@ -9,6 +9,7 @@ description = "QuantTrade backend baseline package."
 requires-python = ">=3.11,<3.12"
 dependencies = [
   "alembic>=1.13.0",
+  "akshare>=1.16.0",
   "celery>=5.4.0",
   "fastapi>=0.115.0",
   "minio>=7.2.0",
