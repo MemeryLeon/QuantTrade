@@ -18,6 +18,13 @@ class Settings:
     minio_secret_key: str
     minio_secure: bool
     minio_bucket_lean_artifacts: str
+    market_provider: str
+    market_failure_threshold: int
+    market_recovery_cooldown_seconds: int
+    market_cache_ttl_seconds: int
+    market_cache_freshness_seconds: int
+    market_max_stale_cache_age_seconds: int
+    market_cache_max_value_bytes: int
     celery_broker_url: str
     celery_result_backend: str
     lean_worker_concurrency: int
@@ -41,6 +48,17 @@ def get_settings() -> Settings:
             "MINIO_BUCKET_LEAN_ARTIFACTS",
             "quanttrade-lean-artifacts",
         ),
+        market_provider=os.getenv("MARKET_PROVIDER", "akshare"),
+        market_failure_threshold=int(os.getenv("MARKET_FAILURE_THRESHOLD", "3")),
+        market_recovery_cooldown_seconds=int(
+            os.getenv("MARKET_RECOVERY_COOLDOWN_SECONDS", "300")
+        ),
+        market_cache_ttl_seconds=int(os.getenv("MARKET_CACHE_TTL_SECONDS", "86400")),
+        market_cache_freshness_seconds=int(os.getenv("MARKET_CACHE_FRESHNESS_SECONDS", "300")),
+        market_max_stale_cache_age_seconds=int(
+            os.getenv("MARKET_MAX_STALE_CACHE_AGE_SECONDS", "86400")
+        ),
+        market_cache_max_value_bytes=int(os.getenv("MARKET_CACHE_MAX_VALUE_BYTES", "2097152")),
         celery_broker_url=os.getenv("CELERY_BROKER_URL", _redis_url()),
         celery_result_backend=os.getenv("CELERY_RESULT_BACKEND", _redis_url()),
         lean_worker_concurrency=int(os.getenv("LEAN_WORKER_CONCURRENCY", "1")),
