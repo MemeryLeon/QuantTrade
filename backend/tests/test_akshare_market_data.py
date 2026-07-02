@@ -54,18 +54,25 @@ class FakeAkshare:
         assert adjust == ""
         if self.fail_hist:
             raise RuntimeError("provider timeout")
-        return FakeFrame(
-            [
+        start = datetime.strptime(start_date, "%Y%m%d").date()
+        end = datetime.strptime(end_date, "%Y%m%d").date()
+        records = []
+        for day in range(1, 31):
+            observed = datetime(2026, 7, day).date()
+            if not start <= observed <= end:
+                continue
+            close = Decimal("10.00") + (Decimal(day) / Decimal("10"))
+            records.append(
                 {
-                    "日期": "2026-07-01",
-                    "开盘": "10.00",
-                    "收盘": "10.10",
-                    "最高": "10.20",
-                    "最低": "9.90",
-                    "成交量": "1000",
+                    "日期": f"2026-07-{day:02d}",
+                    "开盘": str(close - Decimal("0.10")),
+                    "收盘": str(close),
+                    "最高": str(close + Decimal("0.20")),
+                    "最低": str(close - Decimal("0.30")),
+                    "成交量": str(999 + day),
                 }
-            ]
-        )
+            )
+        return FakeFrame(records)
 
     def tool_trade_date_hist_sina(self) -> FakeFrame:
         return FakeFrame(
@@ -92,7 +99,12 @@ class FakeRedis:
         return self.hashes.get(key, {})
 
 
-def _provider(fake_akshare: FakeAkshare, fake_redis: FakeRedis) -> AkshareDataProvider:
+def _provider(
+    fake_akshare: FakeAkshare,
+    fake_redis: FakeRedis,
+    *,
+    max_value_bytes: int = 4096,
+) -> AkshareDataProvider:
     settings = replace(
         get_settings(),
         market_failure_threshold=2,
@@ -100,7 +112,7 @@ def _provider(fake_akshare: FakeAkshare, fake_redis: FakeRedis) -> AkshareDataPr
         market_cache_ttl_seconds=86_400,
         market_cache_freshness_seconds=-1,
         market_max_stale_cache_age_seconds=86_400,
-        market_cache_max_value_bytes=4096,
+        market_cache_max_value_bytes=max_value_bytes,
     )
     return AkshareDataProvider(
         akshare_factory=lambda: fake_akshare,
@@ -145,7 +157,7 @@ def test_akshare_provider_returns_daily_bars_and_calendar() -> None:
 
     assert bars.bars[0].close_price == Decimal("10.10")
     assert bars.bars[0].volume == 1000
-    assert bars.as_of == bars.bars[0].observed_at
+    assert bars.as_of == bars.bars[-1].observed_at
     assert calendar.trading_days == (
         datetime(2026, 7, 1, tzinfo=timezone.utc).date(),
         datetime(2026, 7, 2, tzinfo=timezone.utc).date(),
@@ -201,3 +213,34 @@ def test_market_health_api_uses_application_service() -> None:
     payload = response.json()
     assert payload["provider"] == "akshare"
     assert payload["status"] == "healthy"
+
+
+def test_market_indicators_api_returns_backend_computed_series() -> None:
+    fake_akshare = FakeAkshare()
+    provider = _provider(fake_akshare, FakeRedis(), max_value_bytes=65_536)
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get(
+            "/market/indicators",
+            params={
+                "instrument_id": "CN_A:000001",
+                "start": "2026-07-01T00:00:00Z",
+                "end": "2026-07-30T00:00:00Z",
+                "resolution": "daily",
+                "adjustment": "none",
+            },
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["provider"] == "akshare"
+    assert payload["timezone"] == "Asia/Shanghai"
+    assert payload["parameters"]["sma_period"] == 20
+    assert len(payload["points"]) == 30
+    assert payload["points"][0]["sma"] is None
+    assert payload["points"][-1]["sma"] is not None
+    assert payload["points"][-1]["macd"] is not None

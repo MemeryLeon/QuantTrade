@@ -6,10 +6,13 @@ export function AppLayout() {
       <header className="top-bar">
         <div>
           <p className="eyebrow">QuantTrade</p>
-          <h1>回测工作台</h1>
+          <h1>投研交易工作台</h1>
         </div>
         <nav aria-label="主导航">
           <NavLink to="/" end>
+            行情
+          </NavLink>
+          <NavLink to="/mock-backtests">
             Mock 回测
           </NavLink>
         </nav>

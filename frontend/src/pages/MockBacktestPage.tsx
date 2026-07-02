@@ -32,7 +32,7 @@ export function MockBacktestPage() {
     onSuccess: (submission) => {
       if (submission.job_id) {
         setCurrentJobId(submission.job_id);
-        navigate(`/backtests/mock/${submission.job_id}`);
+        navigate(`/mock-backtests/${submission.job_id}`);
       }
     },
   });

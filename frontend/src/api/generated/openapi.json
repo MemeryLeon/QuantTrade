@@ -347,6 +347,308 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "IndicatorParametersResponse": {
+        "properties": {
+          "adx_period": {
+            "const": 14,
+            "title": "Adx Period",
+            "type": "integer"
+          },
+          "bollinger_multiplier": {
+            "const": 2,
+            "title": "Bollinger Multiplier",
+            "type": "integer"
+          },
+          "bollinger_period": {
+            "const": 20,
+            "title": "Bollinger Period",
+            "type": "integer"
+          },
+          "ema_period": {
+            "const": 20,
+            "title": "Ema Period",
+            "type": "integer"
+          },
+          "macd_fast_period": {
+            "const": 12,
+            "title": "Macd Fast Period",
+            "type": "integer"
+          },
+          "macd_signal_period": {
+            "const": 9,
+            "title": "Macd Signal Period",
+            "type": "integer"
+          },
+          "macd_slow_period": {
+            "const": 26,
+            "title": "Macd Slow Period",
+            "type": "integer"
+          },
+          "rsi_period": {
+            "const": 14,
+            "title": "Rsi Period",
+            "type": "integer"
+          },
+          "sma_period": {
+            "const": 20,
+            "title": "Sma Period",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sma_period",
+          "ema_period",
+          "macd_fast_period",
+          "macd_slow_period",
+          "macd_signal_period",
+          "rsi_period",
+          "bollinger_period",
+          "bollinger_multiplier",
+          "adx_period"
+        ],
+        "title": "IndicatorParametersResponse",
+        "type": "object"
+      },
+      "IndicatorPointResponse": {
+        "properties": {
+          "adx": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adx"
+          },
+          "bollinger_lower": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bollinger Lower"
+          },
+          "bollinger_middle": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bollinger Middle"
+          },
+          "bollinger_upper": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bollinger Upper"
+          },
+          "ema": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ema"
+          },
+          "macd": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macd"
+          },
+          "macd_histogram": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macd Histogram"
+          },
+          "macd_signal": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Macd Signal"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "rsi": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsi"
+          },
+          "sma": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sma"
+          }
+        },
+        "required": [
+          "observed_at",
+          "sma",
+          "ema",
+          "macd",
+          "macd_signal",
+          "macd_histogram",
+          "rsi",
+          "bollinger_middle",
+          "bollinger_upper",
+          "bollinger_lower",
+          "adx"
+        ],
+        "title": "IndicatorPointResponse",
+        "type": "object"
+      },
+      "IndicatorsResponse": {
+        "properties": {
+          "adjustment": {
+            "enum": [
+              "none",
+              "qfq",
+              "hfq"
+            ],
+            "title": "Adjustment",
+            "type": "string"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "currency": {
+            "const": "CNY",
+            "title": "Currency",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "is_delayed": {
+            "title": "Is Delayed",
+            "type": "boolean"
+          },
+          "market": {
+            "const": "CN_A",
+            "title": "Market",
+            "type": "string"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/IndicatorParametersResponse"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/IndicatorPointResponse"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "provider": {
+            "const": "akshare",
+            "title": "Provider",
+            "type": "string"
+          },
+          "quality_flags": {
+            "items": {
+              "$ref": "#/components/schemas/QualityFlag"
+            },
+            "title": "Quality Flags",
+            "type": "array"
+          },
+          "resolution": {
+            "const": "daily",
+            "title": "Resolution",
+            "type": "string"
+          },
+          "stale_age_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Age Seconds"
+          },
+          "timezone": {
+            "const": "Asia/Shanghai",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "provider",
+          "market",
+          "currency",
+          "resolution",
+          "adjustment",
+          "timezone",
+          "parameters",
+          "points",
+          "as_of",
+          "is_delayed",
+          "stale_age_seconds",
+          "quality_flags"
+        ],
+        "title": "IndicatorsResponse",
+        "type": "object"
+      },
       "InstrumentResponse": {
         "properties": {
           "exchange_timezone": {
@@ -1168,6 +1470,94 @@
           }
         },
         "summary": "Get Data Source Health",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/market/indicators": {
+      "get": {
+        "operationId": "get_indicators_market_indicators_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": true,
+            "schema": {
+              "format": "date-time",
+              "title": "End",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolution",
+            "required": false,
+            "schema": {
+              "const": "daily",
+              "default": "daily",
+              "title": "Resolution",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "adjustment",
+            "required": false,
+            "schema": {
+              "default": "none",
+              "enum": [
+                "none",
+                "qfq",
+                "hfq"
+              ],
+              "title": "Adjustment",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicatorsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Indicators",
         "tags": [
           "market"
         ]

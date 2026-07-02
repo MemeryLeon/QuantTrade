@@ -2,10 +2,38 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
+
+from app.domains.market import QualityFlag
 
 
 IndicatorSeries = tuple[Decimal | None, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class IndicatorPoint:
+    observed_at: datetime
+    sma: Decimal | None
+    ema: Decimal | None
+    macd: Decimal | None
+    macd_signal: Decimal | None
+    macd_histogram: Decimal | None
+    rsi: Decimal | None
+    bollinger_middle: Decimal | None
+    bollinger_upper: Decimal | None
+    bollinger_lower: Decimal | None
+    adx: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class IndicatorResult:
+    instrument_id: str
+    points: tuple[IndicatorPoint, ...]
+    as_of: datetime
+    is_delayed: bool
+    stale_age_seconds: int | None
+    quality_flags: tuple[QualityFlag, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -222,4 +250,3 @@ def _dx(plus_dm: Decimal, minus_dm: Decimal, true_range: Decimal) -> Decimal:
 def _require_period(period: int) -> None:
     if period <= 0:
         raise ValueError("period must be positive")
-

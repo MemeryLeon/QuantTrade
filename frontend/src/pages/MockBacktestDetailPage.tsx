@@ -52,7 +52,7 @@ export function MockBacktestDetailPage() {
           <h2 id="job-title">{safeJobId || "未知任务"}</h2>
         </div>
         <div className="actions">
-          <Link className="secondary-button" to="/">
+          <Link className="secondary-button" to="/mock-backtests">
             新建回测
           </Link>
           <button
