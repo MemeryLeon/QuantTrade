@@ -157,6 +157,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Indicators */
+        get: operations["get_indicators_market_indicators_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market/instruments/search": {
         parameters: {
             query?: never;
@@ -305,6 +322,131 @@ export interface components {
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** IndicatorParametersResponse */
+        IndicatorParametersResponse: {
+            /**
+             * Adx Period
+             * @constant
+             */
+            adx_period: 14;
+            /**
+             * Bollinger Multiplier
+             * @constant
+             */
+            bollinger_multiplier: 2;
+            /**
+             * Bollinger Period
+             * @constant
+             */
+            bollinger_period: 20;
+            /**
+             * Ema Period
+             * @constant
+             */
+            ema_period: 20;
+            /**
+             * Macd Fast Period
+             * @constant
+             */
+            macd_fast_period: 12;
+            /**
+             * Macd Signal Period
+             * @constant
+             */
+            macd_signal_period: 9;
+            /**
+             * Macd Slow Period
+             * @constant
+             */
+            macd_slow_period: 26;
+            /**
+             * Rsi Period
+             * @constant
+             */
+            rsi_period: 14;
+            /**
+             * Sma Period
+             * @constant
+             */
+            sma_period: 20;
+        };
+        /** IndicatorPointResponse */
+        IndicatorPointResponse: {
+            /** Adx */
+            adx: string | null;
+            /** Bollinger Lower */
+            bollinger_lower: string | null;
+            /** Bollinger Middle */
+            bollinger_middle: string | null;
+            /** Bollinger Upper */
+            bollinger_upper: string | null;
+            /** Ema */
+            ema: string | null;
+            /** Macd */
+            macd: string | null;
+            /** Macd Histogram */
+            macd_histogram: string | null;
+            /** Macd Signal */
+            macd_signal: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Rsi */
+            rsi: string | null;
+            /** Sma */
+            sma: string | null;
+        };
+        /** IndicatorsResponse */
+        IndicatorsResponse: {
+            /**
+             * Adjustment
+             * @enum {string}
+             */
+            adjustment: "none" | "qfq" | "hfq";
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "CNY";
+            /** Instrument Id */
+            instrument_id: string;
+            /** Is Delayed */
+            is_delayed: boolean;
+            /**
+             * Market
+             * @constant
+             */
+            market: "CN_A";
+            parameters: components["schemas"]["IndicatorParametersResponse"];
+            /** Points */
+            points: components["schemas"]["IndicatorPointResponse"][];
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "akshare";
+            /** Quality Flags */
+            quality_flags: components["schemas"]["QualityFlag"][];
+            /**
+             * Resolution
+             * @constant
+             */
+            resolution: "daily";
+            /** Stale Age Seconds */
+            stale_age_seconds: number | null;
+            /**
+             * Timezone
+             * @constant
+             */
+            timezone: "Asia/Shanghai";
         };
         /** InstrumentResponse */
         InstrumentResponse: {
@@ -735,6 +877,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DataSourceHealthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_indicators_market_indicators_get: {
+        parameters: {
+            query: {
+                instrument_id: string;
+                start: string;
+                end: string;
+                resolution?: "daily";
+                adjustment?: "none" | "qfq" | "hfq";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndicatorsResponse"];
                 };
             };
             /** @description Validation Error */

@@ -12,6 +12,9 @@ from app.contracts.market import (
     BarResponse,
     BarsResponse,
     DataSourceHealthResponse,
+    IndicatorParametersResponse,
+    IndicatorPointResponse,
+    IndicatorsResponse,
     InstrumentResponse,
     InstrumentSearchResponse,
     TradingCalendarResponse,
@@ -88,6 +91,82 @@ async def get_bars(
                 quality_flags=bar.quality_flags,
             )
             for bar in result.bars
+        ),
+        as_of=result.as_of,
+        is_delayed=result.is_delayed,
+        stale_age_seconds=result.stale_age_seconds,
+        quality_flags=result.quality_flags,
+    )
+
+
+@router.get("/indicators")
+async def get_indicators(
+    instrument_id: str,
+    start: datetime,
+    end: datetime,
+    resolution: Literal["daily"] = "daily",
+    adjustment: Literal["none", "qfq", "hfq"] = "none",
+    service: MarketDataApplicationService = Depends(get_market_data_service),
+) -> IndicatorsResponse:
+    try:
+        result = await service.get_indicators(
+            BarsRequest(
+                instrument_id=instrument_id,
+                start=start,
+                end=end,
+                resolution=resolution,
+                adjustment=adjustment,
+            )
+        )
+    except ValueError as exc:
+        raise ApiError(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message=str(exc),
+            details={"instrument_id": instrument_id},
+        ) from exc
+    return IndicatorsResponse(
+        instrument_id=result.instrument_id,
+        provider="akshare",
+        market="CN_A",
+        currency="CNY",
+        resolution=resolution,
+        adjustment=adjustment,
+        timezone="Asia/Shanghai",
+        parameters=IndicatorParametersResponse(
+            sma_period=20,
+            ema_period=20,
+            macd_fast_period=12,
+            macd_slow_period=26,
+            macd_signal_period=9,
+            rsi_period=14,
+            bollinger_period=20,
+            bollinger_multiplier=2,
+            adx_period=14,
+        ),
+        points=tuple(
+            IndicatorPointResponse(
+                observed_at=point.observed_at,
+                sma=None if point.sma is None else Decimal(point.sma),
+                ema=None if point.ema is None else Decimal(point.ema),
+                macd=None if point.macd is None else Decimal(point.macd),
+                macd_signal=None if point.macd_signal is None else Decimal(point.macd_signal),
+                macd_histogram=(
+                    None if point.macd_histogram is None else Decimal(point.macd_histogram)
+                ),
+                rsi=None if point.rsi is None else Decimal(point.rsi),
+                bollinger_middle=(
+                    None if point.bollinger_middle is None else Decimal(point.bollinger_middle)
+                ),
+                bollinger_upper=(
+                    None if point.bollinger_upper is None else Decimal(point.bollinger_upper)
+                ),
+                bollinger_lower=(
+                    None if point.bollinger_lower is None else Decimal(point.bollinger_lower)
+                ),
+                adx=None if point.adx is None else Decimal(point.adx),
+            )
+            for point in result.points
         ),
         as_of=result.as_of,
         is_delayed=result.is_delayed,

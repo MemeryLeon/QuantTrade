@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 
 test("submits a mock backtest and shows logs and result", async ({ page }) => {
   await page.route("**/backtests/mock", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({
       json: {
         status: "accepted",
@@ -52,7 +56,7 @@ test("submits a mock backtest and shows logs and result", async ({ page }) => {
     });
   });
 
-  await page.goto("/");
+  await page.goto("/mock-backtests");
   await page.getByRole("button", { name: "提交 Mock 回测" }).click();
 
   await expect(page.getByRole("heading", { name: "job-1" })).toBeVisible();
