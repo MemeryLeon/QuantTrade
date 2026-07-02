@@ -41,6 +41,21 @@ class BarResponse(BaseModel):
     quality_flags: tuple[QualityFlag, ...]
 
 
+class QuoteResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    instrument_id: str
+    provider: Literal["akshare"]
+    market: Literal["CN_A"]
+    currency: Literal["CNY"]
+    bid_price: Decimal | None
+    ask_price: Decimal | None
+    last_price: Decimal | None
+    as_of: datetime
+    is_delayed: bool
+    quality_flags: tuple[QualityFlag, ...]
+
+
 class BarsResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 

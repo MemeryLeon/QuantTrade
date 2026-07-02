@@ -289,6 +289,17 @@ textarea {
   margin-bottom: 16px;
 }
 
+.recent-list {
+  margin-top: -8px;
+}
+
+.recent-list::before {
+  content: "最近访问";
+  align-self: center;
+  color: #647184;
+  font-size: 13px;
+}
+
 .instrument-list button {
   min-height: 34px;
   border-color: #c6ced8;
@@ -453,7 +464,18 @@ textarea {
   border-color: #c6ced8;
   background: #ffffff;
   color: #26384d;
+  display: grid;
+  gap: 2px;
   overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.watchlist-items button:first-child strong {
+  color: #26384d;
+}
+
+.watchlist-items button:first-child span {
+  margin: 0;
 }
 
 .json-area {

@@ -3,6 +3,7 @@ import type { components } from "../api/generated/schema";
 
 export type Instrument = components["schemas"]["InstrumentResponse"];
 export type Bars = components["schemas"]["BarsResponse"];
+export type Quote = components["schemas"]["QuoteResponse"];
 export type Indicators = components["schemas"]["IndicatorsResponse"];
 export type DataSourceHealth = components["schemas"]["DataSourceHealthResponse"];
 export type Adjustment = Bars["adjustment"];
@@ -49,6 +50,16 @@ export async function getBars(params: {
         adjustment: params.adjustment,
       },
     },
+  });
+  if (error || !data) {
+    throw new Error(apiErrorMessage(error));
+  }
+  return data;
+}
+
+export async function getQuote(instrumentId: string): Promise<Quote> {
+  const { data, error } = await apiClient.GET("/market/quote", {
+    params: { query: { instrument_id: instrumentId } },
   });
   if (error || !data) {
     throw new Error(apiErrorMessage(error));

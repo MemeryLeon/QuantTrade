@@ -970,6 +970,95 @@
         "title": "QualityFlag",
         "type": "string"
       },
+      "QuoteResponse": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "ask_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ask Price"
+          },
+          "bid_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Price"
+          },
+          "currency": {
+            "const": "CNY",
+            "title": "Currency",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "string"
+          },
+          "is_delayed": {
+            "title": "Is Delayed",
+            "type": "boolean"
+          },
+          "last_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Price"
+          },
+          "market": {
+            "const": "CN_A",
+            "title": "Market",
+            "type": "string"
+          },
+          "provider": {
+            "const": "akshare",
+            "title": "Provider",
+            "type": "string"
+          },
+          "quality_flags": {
+            "items": {
+              "$ref": "#/components/schemas/QualityFlag"
+            },
+            "title": "Quality Flags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "provider",
+          "market",
+          "currency",
+          "bid_price",
+          "ask_price",
+          "last_price",
+          "as_of",
+          "is_delayed",
+          "quality_flags"
+        ],
+        "title": "QuoteResponse",
+        "type": "object"
+      },
       "TradingCalendarResponse": {
         "properties": {
           "market": {
@@ -1725,6 +1814,48 @@
           }
         },
         "summary": "Search Instruments",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/market/quote": {
+      "get": {
+        "operationId": "get_quote_market_quote_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Quote",
         "tags": [
           "market"
         ]

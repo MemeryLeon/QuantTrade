@@ -320,3 +320,23 @@ def test_market_bars_api_accepts_weekly_resolution() -> None:
     assert payload["resolution"] == "weekly"
     assert len(payload["bars"]) == 5
     assert payload["bars"][0]["volume"] == 5010
+
+
+def test_market_quote_api_returns_backend_quote_contract() -> None:
+    fake_akshare = FakeAkshare()
+    provider = _provider(fake_akshare, FakeRedis())
+    service = MarketDataApplicationService(provider=provider, health=provider)
+    app.dependency_overrides[get_market_data_service] = lambda: service
+    client = TestClient(app)
+    try:
+        response = client.get("/market/quote", params={"instrument_id": "CN_A:000001"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["provider"] == "akshare"
+    assert payload["market"] == "CN_A"
+    assert payload["currency"] == "CNY"
+    assert payload["last_price"] == "10.10"
+    assert payload["is_delayed"] is False

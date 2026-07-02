@@ -6,6 +6,7 @@ import {
   getBars,
   getDataSourceHealth,
   getIndicators,
+  getQuote,
   searchInstruments,
   type Adjustment,
   type Bars,
@@ -14,6 +15,7 @@ import {
   type Indicators,
   type Instrument,
   type MarketResolution,
+  type Quote,
 } from "../services/market";
 import { useWatchlistStore } from "../stores/watchlistStore";
 
@@ -61,19 +63,39 @@ const defaultVisibleIndicators: Record<IndicatorKey, boolean> = {
   adx: false,
 };
 
+const MARKET_PREFERENCES_KEY = "quanttrade.market.preferences.v1";
+
+type MarketPreferences = {
+  resolution: MarketResolution;
+  adjustment: Adjustment;
+  indicatorParameters: IndicatorParameters;
+  visibleIndicators: Record<IndicatorKey, boolean>;
+  recentInstruments: Instrument[];
+};
+
 export function MarketPage() {
+  const [initialPreferences] = useState(loadMarketPreferences);
   const [query, setQuery] = useState("平安");
   const [submittedQuery, setSubmittedQuery] = useState("平安");
   const [selectedInstrument, setSelectedInstrument] = useState<Instrument>(defaultInstrument);
   const [startDate, setStartDate] = useState(() => daysBeforeInputDate(180));
   const [endDate, setEndDate] = useState(() => inputDate(new Date()));
-  const [resolution, setResolution] = useState<MarketResolution>("daily");
-  const [adjustment, setAdjustment] = useState<Adjustment>("qfq");
+  const [resolution, setResolution] = useState<MarketResolution>(
+    initialPreferences?.resolution ?? "daily",
+  );
+  const [adjustment, setAdjustment] = useState<Adjustment>(
+    initialPreferences?.adjustment ?? "qfq",
+  );
   const [indicatorParameters, setIndicatorParameters] = useState<IndicatorParameters>(
-    defaultIndicatorParameters,
+    initialPreferences?.indicatorParameters ?? defaultIndicatorParameters,
   );
   const [visibleIndicators, setVisibleIndicators] =
-    useState<Record<IndicatorKey, boolean>>(defaultVisibleIndicators);
+    useState<Record<IndicatorKey, boolean>>(
+      initialPreferences?.visibleIndicators ?? defaultVisibleIndicators,
+    );
+  const [recentInstruments, setRecentInstruments] = useState<Instrument[]>(
+    initialPreferences?.recentInstruments ?? [],
+  );
   const [chartResetSignal, setChartResetSignal] = useState(0);
   const [chartFullscreen, setChartFullscreen] = useState(false);
   const [exportText, setExportText] = useState("");
@@ -94,6 +116,11 @@ export function MarketPage() {
     queryKey: ["market-search", submittedQuery],
     queryFn: () => searchInstruments(submittedQuery),
     enabled: submittedQuery.trim().length > 0,
+  });
+  const quoteQuery = useQuery({
+    queryKey: ["market-quote", selectedInstrument.instrument_id],
+    queryFn: () => getQuote(selectedInstrument.instrument_id),
+    refetchInterval: 30_000,
   });
   const barsQuery = useQuery({
     queryKey: ["market-bars", selectedInstrument.instrument_id, startDate, endDate, resolution, adjustment],
@@ -128,15 +155,37 @@ export function MarketPage() {
   });
 
   useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setSubmittedQuery(query.trim());
+    }, 350);
+    return () => window.clearTimeout(handle);
+  }, [query]);
+
+  useEffect(() => {
     const first = searchQuery.data?.[0];
     if (first) {
       setSelectedInstrument(first);
     }
   }, [searchQuery.data]);
 
+  useEffect(() => {
+    setRecentInstruments((current) => rememberInstrument(current, selectedInstrument));
+  }, [selectedInstrument]);
+
+  useEffect(() => {
+    saveMarketPreferences({
+      resolution,
+      adjustment,
+      indicatorParameters,
+      visibleIndicators,
+      recentInstruments,
+    });
+  }, [adjustment, indicatorParameters, recentInstruments, resolution, visibleIndicators]);
+
   const indicatorPoints = indicatorsQuery.data?.points ?? [];
   const latestIndicator = indicatorPoints[indicatorPoints.length - 1];
   const warningText = warningMessage(healthQuery.data, barsQuery.data, indicatorsQuery.data);
+  const quoteSummary = quoteDetails(quoteQuery.data, barsQuery.data);
   const selectedInWatchlist = watchlistItems.some(
     (item) => item.instrument_id === selectedInstrument.instrument_id,
   );
@@ -259,6 +308,23 @@ export function MarketPage() {
         </section>
       ) : null}
 
+      {recentInstruments.length > 0 ? (
+        <section className="instrument-list recent-list" aria-label="最近访问">
+          {recentInstruments.map((instrument) => (
+            <button
+              className={
+                instrument.instrument_id === selectedInstrument.instrument_id ? "selected" : ""
+              }
+              type="button"
+              key={instrument.instrument_id}
+              onClick={() => setSelectedInstrument(instrument)}
+            >
+              {instrument.name} {instrument.symbol}
+            </button>
+          ))}
+        </section>
+      ) : null}
+
       <section className="market-grid">
         <section className="market-chart-panel" aria-labelledby="chart-title">
           <div className="panel-heading">
@@ -296,6 +362,10 @@ export function MarketPage() {
 
         <aside className="market-side" aria-label="行情基础信息">
           <InfoItem label="数据源" value={barsQuery.data?.provider ?? "akshare"} />
+          <InfoItem label="最新价" value={formatNumber(quoteSummary.lastPrice)} />
+          <InfoItem label="涨跌额" value={formatSignedNumber(quoteSummary.change)} />
+          <InfoItem label="涨跌幅" value={formatPercent(quoteSummary.changePercent)} />
+          <InfoItem label="报价时间" value={formatDateTime(quoteQuery.data?.as_of)} />
           <InfoItem label="市场" value={barsQuery.data?.market ?? selectedInstrument.market} />
           <InfoItem label="时区" value={barsQuery.data?.timezone ?? selectedInstrument.exchange_timezone} />
           <InfoItem label="周期" value={resolutionLabels[barsQuery.data?.resolution ?? resolution]} />
@@ -351,7 +421,10 @@ export function MarketPage() {
             watchlistItems.map((item) => (
               <div key={item.instrument_id}>
                 <button type="button" onClick={() => setSelectedInstrument(item)}>
-                  {item.name} {item.symbol}
+                  <strong>
+                    {item.name} {item.symbol}
+                  </strong>
+                  <span>加入 {formatDateTime(item.added_at)}</span>
                 </button>
                 <button
                   className="secondary-button"
@@ -590,6 +663,36 @@ function warningMessage(
   return null;
 }
 
+function quoteDetails(quote: Quote | undefined, bars: Bars | undefined) {
+  const lastPrice = quote?.last_price ?? latestBar(bars)?.close_price ?? null;
+  const previous = previousBar(bars)?.close_price ?? null;
+  const change =
+    lastPrice !== null && previous !== null ? Number(lastPrice) - Number(previous) : null;
+  const changePercent =
+    change !== null && previous !== null && Number(previous) !== 0
+      ? change / Number(previous)
+      : null;
+  return { lastPrice, change, changePercent };
+}
+
+function latestBar(bars: Bars | undefined) {
+  return bars?.bars[bars.bars.length - 1];
+}
+
+function previousBar(bars: Bars | undefined) {
+  if (!bars || bars.bars.length < 2) {
+    return undefined;
+  }
+  return bars.bars[bars.bars.length - 2];
+}
+
+function rememberInstrument(current: Instrument[], instrument: Instrument) {
+  return [
+    instrument,
+    ...current.filter((item) => item.instrument_id !== instrument.instrument_id),
+  ].slice(0, 6);
+}
+
 function daysBeforeInputDate(days: number) {
   const value = new Date();
   value.setDate(value.getDate() - days);
@@ -630,4 +733,151 @@ function formatNumber(value: string | number | null | undefined) {
     return "-";
   }
   return Number(value).toFixed(4);
+}
+
+function formatSignedNumber(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  return `${value >= 0 ? "+" : ""}${value.toFixed(4)}`;
+}
+
+function formatPercent(value: number | null | undefined) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  return `${value >= 0 ? "+" : ""}${(value * 100).toFixed(2)}%`;
+}
+
+function loadMarketPreferences(): MarketPreferences | null {
+  if (!canUseLocalStorage()) {
+    return null;
+  }
+  const content = window.localStorage.getItem(MARKET_PREFERENCES_KEY);
+  if (!content) {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (!isRecord(parsed) || parsed.version !== 1) {
+      return null;
+    }
+    return {
+      resolution: readResolution(parsed.resolution),
+      adjustment: readAdjustment(parsed.adjustment),
+      indicatorParameters: readIndicatorParameters(parsed.indicatorParameters),
+      visibleIndicators: readVisibleIndicators(parsed.visibleIndicators),
+      recentInstruments: readInstruments(parsed.recentInstruments).slice(0, 6),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveMarketPreferences(preferences: MarketPreferences) {
+  if (!canUseLocalStorage()) {
+    return;
+  }
+  window.localStorage.setItem(
+    MARKET_PREFERENCES_KEY,
+    JSON.stringify({ version: 1, ...preferences }),
+  );
+}
+
+function readResolution(value: unknown): MarketResolution {
+  return value === "weekly" || value === "monthly" || value === "daily" ? value : "daily";
+}
+
+function readAdjustment(value: unknown): Adjustment {
+  return value === "none" || value === "qfq" || value === "hfq" ? value : "qfq";
+}
+
+function readIndicatorParameters(value: unknown): IndicatorParameters {
+  if (!isRecord(value)) {
+    return defaultIndicatorParameters;
+  }
+  return {
+    sma_period: readBoundedNumber(value.sma_period, 20),
+    ema_period: readBoundedNumber(value.ema_period, 20),
+    macd_fast_period: readBoundedNumber(value.macd_fast_period, 12),
+    macd_slow_period: readBoundedNumber(value.macd_slow_period, 26),
+    macd_signal_period: readBoundedNumber(value.macd_signal_period, 9),
+    rsi_period: readBoundedNumber(value.rsi_period, 14),
+    bollinger_period: readBoundedNumber(value.bollinger_period, 20),
+    bollinger_multiplier: String(readBoundedDecimal(value.bollinger_multiplier, 2, 0.1, 10)),
+    adx_period: readBoundedNumber(value.adx_period, 14),
+  };
+}
+
+function readVisibleIndicators(value: unknown): Record<IndicatorKey, boolean> {
+  if (!isRecord(value)) {
+    return defaultVisibleIndicators;
+  }
+  return {
+    sma: typeof value.sma === "boolean" ? value.sma : defaultVisibleIndicators.sma,
+    ema: typeof value.ema === "boolean" ? value.ema : defaultVisibleIndicators.ema,
+    bollinger:
+      typeof value.bollinger === "boolean"
+        ? value.bollinger
+        : defaultVisibleIndicators.bollinger,
+    macd: typeof value.macd === "boolean" ? value.macd : defaultVisibleIndicators.macd,
+    rsi: typeof value.rsi === "boolean" ? value.rsi : defaultVisibleIndicators.rsi,
+    adx: typeof value.adx === "boolean" ? value.adx : defaultVisibleIndicators.adx,
+  };
+}
+
+function readInstruments(value: unknown): Instrument[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.flatMap((item) => {
+    if (!isRecord(item)) {
+      return [];
+    }
+    const instrument = {
+      instrument_id: readOptionalString(item.instrument_id),
+      symbol: readOptionalString(item.symbol),
+      name: readOptionalString(item.name),
+      market: readOptionalString(item.market),
+      exchange_timezone: readOptionalString(item.exchange_timezone),
+    };
+    if (
+      !instrument.instrument_id ||
+      !instrument.symbol ||
+      !instrument.name ||
+      instrument.market !== "CN_A" ||
+      !instrument.exchange_timezone
+    ) {
+      return [];
+    }
+    return [instrument as Instrument];
+  });
+}
+
+function readBoundedNumber(value: unknown, fallback: number, min = 2, max = 500) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
+function readBoundedDecimal(value: unknown, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, parsed));
+}
+
+function readOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function canUseLocalStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

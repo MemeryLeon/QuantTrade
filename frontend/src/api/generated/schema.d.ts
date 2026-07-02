@@ -191,6 +191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quote */
+        get: operations["get_quote_market_quote_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -554,6 +571,41 @@ export interface components {
          * @enum {string}
          */
         QualityFlag: "MISSING_BARS" | "DUPLICATE_BARS" | "OUT_OF_ORDER" | "STALE_CACHE" | "PROVIDER_DEGRADED" | "PROVIDER_UNAVAILABLE" | "ADJUSTMENT_FACTOR_MISSING" | "CALENDAR_MISMATCH" | "TIMEZONE_AMBIGUOUS";
+        /** QuoteResponse */
+        QuoteResponse: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Ask Price */
+            ask_price: string | null;
+            /** Bid Price */
+            bid_price: string | null;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "CNY";
+            /** Instrument Id */
+            instrument_id: string;
+            /** Is Delayed */
+            is_delayed: boolean;
+            /** Last Price */
+            last_price: string | null;
+            /**
+             * Market
+             * @constant
+             */
+            market: "CN_A";
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "akshare";
+            /** Quality Flags */
+            quality_flags: components["schemas"]["QualityFlag"][];
+        };
         /** TradingCalendarResponse */
         TradingCalendarResponse: {
             /** Market */
@@ -925,6 +977,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstrumentSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_quote_market_quote_get: {
+        parameters: {
+            query: {
+                instrument_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuoteResponse"];
                 };
             };
             /** @description Validation Error */

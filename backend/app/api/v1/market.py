@@ -19,6 +19,7 @@ from app.contracts.market import (
     InstrumentResponse,
     InstrumentSearchResponse,
     MarketResolution,
+    QuoteResponse,
     TradingCalendarResponse,
 )
 from app.core.errors import ApiError
@@ -46,6 +47,34 @@ async def search_instruments(
             )
             for instrument in instruments
         )
+    )
+
+
+@router.get("/quote")
+async def get_quote(
+    instrument_id: str,
+    service: MarketDataApplicationService = Depends(get_market_data_service),
+) -> QuoteResponse:
+    try:
+        quote = await service.get_quote(instrument_id)
+    except (KeyError, ValueError) as exc:
+        raise ApiError(
+            status_code=400,
+            code="VALIDATION_ERROR",
+            message=str(exc),
+            details={"instrument_id": instrument_id},
+        ) from exc
+    return QuoteResponse(
+        instrument_id=quote.instrument_id,
+        provider="akshare",
+        market="CN_A",
+        currency="CNY",
+        bid_price=None if quote.bid_price is None else Decimal(quote.bid_price),
+        ask_price=None if quote.ask_price is None else Decimal(quote.ask_price),
+        last_price=None if quote.last_price is None else Decimal(quote.last_price),
+        as_of=quote.as_of,
+        is_delayed=quote.is_delayed,
+        quality_flags=quote.quality_flags,
     )
 
 
